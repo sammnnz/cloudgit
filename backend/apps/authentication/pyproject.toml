@@ -1,25 +1,24 @@
 [project]
-name = "cloudgit"
+name = "authentication"
 version = "0.1.0"
-description = ""
-license = {file = "LICENSE"}
+description = "Auth service for CloudGit WEB Application"
 authors = [
-    {name = "Sam Nazarov", email = "samnnazarov@gmail.com"}
+    {name = "Sam Nazarov",email = "samnnazarov@gmail.com"}
 ]
 readme = "README.md"
 requires-python = "~3.10"
 dependencies = [
-    "django (>=5.2,<6.0)",
-    "djangorestframework (>=3.16.0,<4.0.0)",
+    "django (>=5.2.1,<6.0.0)",
     "django-cors-headers (>=4.7.0,<5.0.0)",
     "python-dotenv (>=1.1.0,<2.0.0)",
-    "setuptools (>=80.4.0,<81.0.0)",
+    "setuptools (>=80.8.0,<81.0.0)",
     "gunicorn (>=23.0.0,<24.0.0)",
+    "djangorestframework (>=3.16.0,<4.0.0)"
 ]
 
 [tool.poetry]
 packages = [
-    {include = "authentication", from = "apps"}
+    {include = "authentication", from = "../"}
 ]
 
 

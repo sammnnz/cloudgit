@@ -1,5 +1,7 @@
 """
-Django dev settings for authentication service.
+Django prod settings for authentication service.
+
+TODO: update for prod
 """
 import os
 
@@ -71,7 +73,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'corsheaders',
     'rest_framework',
-    'apps.authentication',
+    'authentication',
 ]
 
 MIDDLEWARE = [
@@ -85,7 +87,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware'
 ]
 
-ROOT_URLCONF = 'apps.authentication.urls'
+ROOT_URLCONF = 'authentication.urls'
 
 TEMPLATES = [
     {
@@ -102,7 +104,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'cloudgit.wsgi.application'
+WSGI_APPLICATION = 'authentication.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
