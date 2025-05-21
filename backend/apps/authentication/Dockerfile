@@ -18,6 +18,6 @@ RUN poetry install --no-interaction --no-root
 
 COPY . ./
 
-ENV PYTHONPATH=/srv/www/cloudgit/apps/authentication
+ENV PYTHONPATH=/srv/www/cloudgit/apps
 
-CMD [ "poetry", "run", "gunicorn", "-c", "gunicorn.py", "wsgi:application" ]
+CMD [ "poetry", "run", "gunicorn", "-c", "gunicorn.conf.py", "wsgi:application" ]

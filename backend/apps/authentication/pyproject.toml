@@ -13,7 +13,8 @@ dependencies = [
     "python-dotenv (>=1.1.0,<2.0.0)",
     "setuptools (>=80.8.0,<81.0.0)",
     "gunicorn (>=23.0.0,<24.0.0)",
-    "djangorestframework (>=3.16.0,<4.0.0)"
+    "djangorestframework (>=3.16.0,<4.0.0)",
+    "gevent (>=25.5.1,<26.0.0)"
 ]
 
 [tool.poetry]
