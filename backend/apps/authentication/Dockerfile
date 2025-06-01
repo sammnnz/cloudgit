@@ -1,6 +1,6 @@
 FROM python:3.10-alpine
 
-SHELL [ "/bin/bash", "-c" ]
+ENV SHELL="/bin/bash"
 
 RUN pip install --upgrade pip
 RUN pip install poetry
