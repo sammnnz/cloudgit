@@ -1,0 +1,9 @@
+[Unit]
+Description=Autentication service for CloudGit WEB Application
+After=network.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/home/ubuntu/.local/bin/gunicorn cloudgit.wsgi:application --preload --workers=4 --timeout 300
