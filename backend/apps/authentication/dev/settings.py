@@ -109,15 +109,15 @@ WSGI_APPLICATION = 'authentication.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.getenv('DJANGO_POSTGRESQL_NAME'),
-        'USER': os.getenv('DJANGO_POSTGRESQL_USER'),
-        'PASSWORD': os.getenv('DJANGO_POSTGRESQL_PASSWORD'),
-        'HOST': os.getenv('DJANGO_POSTGRESQL_HOST'),
-        'PORT': os.getenv('DJANGO_POSTGRESQL_PORT')
-    },
     'dev': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('POSTGRES_HOST'),
+        'PORT': os.getenv('POSTGRES_PORT')
+    },
+    'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db_authentication.sqlite3',
     },
