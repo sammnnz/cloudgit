@@ -1,13 +1,53 @@
+#https://docs.docker.com/reference/compose-file/version-and-name/#version-top-level-element-obsolete
 networks:
-  main:
+  cloudgit:
 
 services:
   auth:
-    build:
-      ./apps/authentication
+    restart: always
+    build: ./apps/authentication
+    container_name: auth
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
+    user: "1001:1001"
     env_file:
-      .env
+      - ./.env
+      - ./apps/authentication/.env
     networks:
-      - main
+      - cloudgit
     ports:
       - 127.0.0.1:8000:8000
+    environment:
+    #https://ru.stackoverflow.com/questions/1513850/%D0%9F%D0%BE%D1%87%D0%B5%D0%BC%D1%83-%D0%B2-docker-%D0%BF%D0%B0%D0%B4%D0%B0%D0%B5%D1%82-%D0%BF%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5
+      POSTGRES_HOST: auth_db
+      DJANGO_SETTINGS_MODULE: settings
+    command: >
+      sh -c "
+      ./manage.py migrate &&
+      gunicorn -c gunicorn.conf.py wsgi:application"
+    depends_on:
+      - auth_db
+  auth_db:
+    restart: always
+    image: postgres:16
+    container_name: auth_db
+    networks:
+      - cloudgit
+    env_file:
+      - ./.env
+      - ./apps/authentication/.env
+    environment:
+      PGDATA: /var/lib/postgresql/data
+      PGUSER: cloudgit_admin
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+    ports:
+      - 5430:5432
+    volumes:
+      - ~/.pg/pg_data/auth:/var/lib/postgresql/data
