@@ -5,7 +5,7 @@ networks:
 services:
   auth:
     restart: always
-    build: ./apps/authentication
+    build: ./backend/apps/authentication
     container_name: auth
     security_opt:
       - no-new-privileges
@@ -13,8 +13,8 @@ services:
       - ALL
     user: "1001:1001"
     env_file:
-      - ./.env
-      - ./apps/authentication/.env
+      - ./backend/.env
+      - ./backend/apps/authentication/.env
     networks:
       - cloudgit
     ports:
@@ -38,8 +38,8 @@ services:
     networks:
       - cloudgit
     env_file:
-      - ./.env
-      - ./apps/authentication/.env
+      - ./backend/.env
+      - ./backend/apps/authentication/.env
     environment:
       PGDATA: /var/lib/postgresql/data
       PGUSER: cloudgit_admin
@@ -50,7 +50,7 @@ services:
       timeout: 10s
       retries: 5
     ports:
-      - 5430:5432
+      - 127.0.0.1:5430:5432
     volumes:
       - ~/.pg/pg_data/auth:/var/lib/postgresql/data
   
@@ -61,10 +61,33 @@ services:
     networks:
       - cloudgit
     env_file:
-      - ./.env
+      - ./backend/.env
     ports:
-      - 5080:80
+      - 127.0.0.1:5080:80
     depends_on:
       auth_db:
         condition: service_healthy
         restart: true
+
+  frontend:
+    restart: always
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - 127.0.0.1:3000:3000
+    env_file:
+      - ./frontend/.env
+    networks:
+      - cloudgit
+
+  nginx:
+    restart: always
+    image: nginx:1.29.0-alpine-slim
+    container_name: nginx
+    ports:
+      - 127.0.0.1:8080:80
+    networks:
+      - cloudgit
+    depends_on:
+      - auth
+      - frontend

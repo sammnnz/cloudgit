@@ -137,5 +137,5 @@ dist
 .pnp.*
 
 # Custom
-package-lock.json
+build/**/*
 jsconfig.json

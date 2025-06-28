@@ -10,7 +10,7 @@ const
     App = lazyLoad(() => import("@/components/App")),
     Welcome = lazyLoad(() => import("@/pages/Welcome")),
     Signup = lazyLoad(() => import("@/pages/Signup")),
-    Signin = lazyLoad(() => import("@/pages/SignIn")),
+    Signin = lazyLoad(() => import("@/pages/Signin")),
     Dashboard = lazyLoad(() => import("@/pages/Dashboard"));
 const routes = [
     {
