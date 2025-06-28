@@ -28,9 +28,11 @@ services:
       ./manage.py migrate &&
       gunicorn -c gunicorn.conf.py wsgi:application"
     depends_on:
-      - auth_db
+      auth_db:
+        condition: service_healthy
+        restart: true
+
   auth_db:
-    restart: always
     image: postgres:16
     container_name: auth_db
     networks:
@@ -45,9 +47,24 @@ services:
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
       interval: 10s
-      timeout: 5s
-      retries: 2
+      timeout: 10s
+      retries: 5
     ports:
       - 5430:5432
     volumes:
       - ~/.pg/pg_data/auth:/var/lib/postgresql/data
+  
+  pgadmin:
+    restart: always
+    image: dpage/pgadmin4:9.4
+    container_name: pgadmin
+    networks:
+      - cloudgit
+    env_file:
+      - ./.env
+    ports:
+      - 5080:80
+    depends_on:
+      auth_db:
+        condition: service_healthy
+        restart: true
