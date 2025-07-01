@@ -3,6 +3,8 @@ import PriceCard from "@/components/pricing/PriceCard"
 import { ShadowRoot } from "@/components/ShadowRoot";
 import Slider from "react-slick";
 import {isEmailValid} from "@/common/utils";
+import slickCSS from "@styles/welcome/slick.module.css";
+import welcomeBlockCSS from '@/styles/welcome/welcome-block.module.css';
 
 const WelcomeBlock = () => {
     const slickSettings = {
@@ -31,10 +33,10 @@ const WelcomeBlock = () => {
     }
 
     return (
-        <ShadowRoot>
-            <link rel="stylesheet" href="./src/styles/welcome/welcome-block.css"/>
-            <link rel="stylesheet" href="./node_modules/slick-carousel/slick/slick.css"/>
-            <link rel="stylesheet" href="./node_modules/slick-carousel/slick/slick-theme.css"/>
+        <ShadowRoot linkstyles={[welcomeBlockCSS, slickCSS]}>
+            {/*<link rel="stylesheet" href="./src/styles/welcome/welcome-block.css"/>*/}
+            {/*<link rel="stylesheet" href="./node_modules/slick-carousel/slick/slick.css"/>*/}
+            {/*<link rel="stylesheet" href="./node_modules/slick-carousel/slick/slick-theme.css"/>*/}
             <div className="welcome-block">
                 <div className="container">
                     <div className="content">

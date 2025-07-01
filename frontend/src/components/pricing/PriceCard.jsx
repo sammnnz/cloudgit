@@ -1,5 +1,6 @@
 import React from "react";
-import {ShadowRoot} from "@components/ShadowRoot.jsx";
+import {ShadowRoot} from "@components/ShadowRoot";
+import price_cards from "@/styles/pricing/price-card.module.css";
 
 const PriceCard = ({type, price, slide = false}) => {
 
@@ -38,8 +39,8 @@ const PriceCard = ({type, price, slide = false}) => {
     }
 
     return (
-        <ShadowRoot>
-            <link rel="stylesheet" href="./src/styles/pricing/price-card.css"/>
+        <ShadowRoot linkstyles={[price_cards]}>
+            {/*<link rel="stylesheet" href="./src/styles/pricing/price-card.css"/>*/}
             <div className="price-card">
                 <div className="container">
                     <div className="type">

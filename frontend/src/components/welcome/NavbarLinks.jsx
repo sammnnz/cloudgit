@@ -1,12 +1,14 @@
 import React from "react";
 import DropdownBar from "./DropdownBar";
 import { ShadowRoot } from "@/components/ShadowRoot";
+import dropdownBarCSS from "@/styles/welcome/dropdown-bar.module.css";
+import navbarLinksCSS from "@/styles/welcome/navbar-links.module.css";
 
 const NavbarLinks = () => {
     return (
-        <ShadowRoot>
-            <link rel="stylesheet" href="./src/styles/welcome/dropdown-bar.css"/>
-            <link rel="stylesheet" href="./src/styles/welcome/navbar-links.css"/>
+        <ShadowRoot linkstyles={[dropdownBarCSS, navbarLinksCSS]}>
+            {/*<link rel="stylesheet" href="./src/styles/welcome/dropdown-bar.css"/>*/}
+            {/*<link rel="stylesheet" href="./src/styles/welcome/navbar-links.css"/>*/}
             <div className="container">
                 <div className="links">
                     <div className="link-container">
