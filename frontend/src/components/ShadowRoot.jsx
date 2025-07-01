@@ -2,6 +2,9 @@ import React, { useRef } from "react";
 import ReactShadowRoot from 'react-shadow-root';
 import defaults from '@/styles/defaults.module.css';
 
+const styleSheetsPureCache = {},
+    styleSheetsNotPureCache = {};
+
 const getStyleSheets = (tables = [], pure = true) => {
     if (! (tables instanceof Array)) throw new Error("Tables must be an array.");
 
@@ -9,19 +12,47 @@ const getStyleSheets = (tables = [], pure = true) => {
 
     tables.push(defaults);
     const startKey = "_start_module",
-        finishKey = "_finish_module";
+        finishKey = "_finish_module",
+        styleSheets = [];
+    let i = 0,
+        length = 0;
+    for (let table of tables) {
+        i += 1;
+        length += 1;
+        if (!(table instanceof Object) ||
+            !(startKey in table) ||
+            !(finishKey in table)) delete tables[i - 1];
+        else if (pure && (table[startKey] in styleSheetsPureCache)) {
+            styleSheets.push(styleSheetsPureCache[table[startKey]]);
+            delete tables[i - 1];
+        }
+        else if (!pure && (table[startKey] in styleSheetsNotPureCache)) {
+            styleSheets.push(styleSheetsNotPureCache[table[startKey]]);
+            delete tables[i - 1];
+        }
+        else length -= 1;
+    }
 
-    const styleSheets = [];
+    if (tables.length === length) return styleSheets;
+
     let currentTable = undefined;
     for (let styleSheet of document.styleSheets) {
-        if (! tables.length) break;
+        if (tables.length === length) break;
 
         for (let cssRule of styleSheet.cssRules) {
             if (currentTable) {
                 if (cssRule.selectorText?.match(currentTable[startKey]))
                     throw new Error("Two equal start selectors found: " + currentTable[startKey]);
 
-                if (cssRule.selectorText?.match(currentTable[finishKey])) currentTable = undefined;
+                if (cssRule.selectorText?.match(currentTable[finishKey])) {
+                    if (pure) {
+                        styleSheetsPureCache[currentTable[startKey]] = styleSheets.at(-1);
+                    } else {
+                        styleSheetsNotPureCache[currentTable[startKey]] = styleSheets.at(-1);
+                    }
+
+                    currentTable = undefined;
+                }
 
                 if (currentTable) {
                     let cssText = cssRule.cssText;
@@ -40,16 +71,15 @@ const getStyleSheets = (tables = [], pure = true) => {
             let i = 0;
             for (let table of tables) {
                 i += 1;
-                if (! (table instanceof Object) ||
-                    ! (startKey in table) ||
-                    ! (finishKey in table)) continue;
+                if (! table) continue;
 
                 if (cssRule.selectorText?.match(table[startKey])) {
                     currentTable = table;
                     delete tables[i - 1];
+                    length += 1;
                     styleSheets.push(new CSSStyleSheet());
+                    break;
                 } else if (cssRule.selectorText?.match(table[finishKey])) {
-                    console.log("Error:", styleSheet, table)
                     throw new Error("Finish selector found without start selector: " + table[finishKey]);
                 }
             }
