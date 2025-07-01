@@ -1,0 +1,4 @@
+@import "@/styles/start.css";
+@import "./node_modules/slick-carousel/slick/slick.css";
+@import "./node_modules/slick-carousel/slick/slick-theme.css";
+@import "@/styles/finish.css";

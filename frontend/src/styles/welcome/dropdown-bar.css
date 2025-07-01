@@ -1,5 +1,5 @@
 .dropdown{
-    display: flex;
+    /*display: flex;*/
     position: absolute;
     justify-content: center;
     min-width: 240px;
