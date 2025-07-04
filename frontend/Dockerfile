@@ -8,6 +8,12 @@ RUN npm install --frozen-lockfile
 
 COPY . .
 
+ARG VITE_DEBUG
+ARG VITE_BACKEND_URL
+
+ENV VITE_DEBUG=$VITE_DEBUG
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
 RUN npm run build
 
 FROM nginx:1.29.0-alpine-slim

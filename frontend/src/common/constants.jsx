@@ -1,6 +1,8 @@
 // This file contains constants used throughout the application
-export const HOST = import.meta.env.REACT_APP_HOST;
-export const PORT = import.meta.env.REACT_APP_PORT;
-export const BACKEND_URL = import.meta.env.REACT_APP_BACKEND_URL || 'http://127.0.0.1:8000';
+const stringToBoolean = (str) => {
+    str = str.trim();
+    return str === 'false' || str === '' ? false : true;
+}
 
-export const DEBUG = true;
+export const DEBUG = stringToBoolean(import.meta.env.VITE_DEBUG);
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.trim();

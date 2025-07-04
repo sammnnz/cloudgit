@@ -44,18 +44,6 @@ export const isUserExists = async (username) => {
     return !!+response?.data;
 }
 
-// export const postSessionSignup = async (username, email, password) => {
-//     const response = await postRequest(url + 'session/signup/', { username, email, password },
-//         {
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'X-CSRF-Token': await getCSRFToken(),
-//         },
-//         withCredentials: true,
-//     });
-//     return convertResponse(response);
-// }
-
 export const postSessionLogin = async (username, password) => {
     const response = await postRequest(url + 'session/login/', { username, password },
         {
