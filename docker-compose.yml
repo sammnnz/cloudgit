@@ -31,7 +31,7 @@ services:
       REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}:${NGINX_EXT_PORT}
     command: >
       sh -c "
-      ./manage.py migrate &&
+      python ./manage.py migrate &&
       gunicorn -c gunicorn.conf.py wsgi:application"
     depends_on:
       auth_db:
