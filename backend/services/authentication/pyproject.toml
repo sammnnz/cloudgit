@@ -1,7 +1,8 @@
 [project]
 name = "authentication"
 version = "0.1.0"
-description = "Auth service for CloudGit WEB Application"
+description = "Authentication service for CloudGIT WEB Application"
+license = "Apache-2.0"
 authors = [
     {name = "Sam Nazarov",email = "samnnazarov@gmail.com"}
 ]
@@ -11,7 +12,6 @@ dependencies = [
     "django (>=5.2.1,<6.0.0)",
     "django-cors-headers (>=4.7.0,<5.0.0)",
     "python-dotenv (>=1.1.0,<2.0.0)",
-    "setuptools (>=80.8.0,<81.0.0)",
     "djangorestframework (>=3.16.0,<4.0.0)",
     "gunicorn[gevent] (>=23.0.0,<24.0.0)",
 ]

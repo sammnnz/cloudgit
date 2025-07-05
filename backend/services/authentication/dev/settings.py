@@ -1,7 +1,5 @@
 """
-Django prod settings for authentication service.
-
-TODO: update for prod
+Django dev settings for authentication service.
 """
 import os
 
@@ -9,10 +7,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # backend/
 
-load_dotenv(BASE_DIR / '.env')  # 1-st
-load_dotenv('.env')             # 2-nd
+load_dotenv(BASE_DIR / '.env')
+load_dotenv('dev/.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -21,7 +19,7 @@ load_dotenv('.env')             # 2-nd
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG')
+DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -118,6 +116,10 @@ DATABASES = {
         'PASSWORD': os.getenv('DJANGO_POSTGRES_PASSWORD'),
         'HOST': os.getenv('DJANGO_POSTGRES_HOST'),
         'PORT': os.getenv('DJANGO_POSTGRES_PORT')
+    },
+    'sqlite': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db_authentication.sqlite3',
     },
 }
 

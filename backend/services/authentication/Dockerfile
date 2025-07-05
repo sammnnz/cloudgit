@@ -12,7 +12,7 @@ ENV PATH="/root/.local/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-ARG APPS_FOLDER=/srv/www/cloudgit/apps
+ARG APPS_FOLDER=/srv/www/cloudgit/services
 ARG APP_FOLDER=${APPS_FOLDER}/authentication
 
 RUN addgroup -g 1001 appuser && \

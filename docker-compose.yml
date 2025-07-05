@@ -5,7 +5,7 @@ networks:
 services:
   auth:
     restart: always
-    build: ./backend/apps/authentication
+    build: ./backend/services/authentication
     container_name: auth
     security_opt:
       - no-new-privileges
