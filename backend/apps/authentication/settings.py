@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
 
-load_dotenv(BASE_DIR / '.env')
-load_dotenv('.env')
+load_dotenv(BASE_DIR / '.env')  # 1-st
+load_dotenv('.env')             # 2-nd
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -21,7 +21,7 @@ load_dotenv('.env')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -34,7 +34,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    os.getenv('FRONTEND_URL')
+    os.getenv('REMOTE_SERVER_URL')
 ]
 
 CORS_EXPOSE_HEADERS = [
@@ -58,7 +58,7 @@ SESSION_COOKIE_HTTPONLY = True
 # SESSION_COOKIE_SECURE = True
 
 CSRF_TRUSTED_ORIGINS = [
-    os.getenv('FRONTEND_URL')
+    os.getenv('REMOTE_SERVER_URL')
 ]
 
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
@@ -113,11 +113,11 @@ WSGI_APPLICATION = 'authentication.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.getenv('POSTGRES_DB'),
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('POSTGRES_HOST'),
-        'PORT': os.getenv('POSTGRES_PORT')
+        'NAME': os.getenv('DJANGO_POSTGRES_DB_NAME'),
+        'USER': os.getenv('DJANGO_POSTGRES_USER'),
+        'PASSWORD': os.getenv('DJANGO_POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DJANGO_POSTGRES_HOST'),
+        'PORT': os.getenv('DJANGO_POSTGRES_PORT')
     },
 }
 

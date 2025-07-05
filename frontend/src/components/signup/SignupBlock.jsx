@@ -3,6 +3,7 @@ import { ShadowRoot } from "@/components/ShadowRoot";
 import {isEmailValid, isUsernameValid, showServerError} from "@common/utils";
 import validator from "validator/es";
 import {isUserExists, postSessionLogin, postUserCreate} from "@/api/auth";
+import signupCSS from "@/styles/signup.module.css";
 
 const SignupBlock = () => {
     const
@@ -158,8 +159,8 @@ const SignupBlock = () => {
     }
 
     return (
-        <ShadowRoot onload={onShadowRootLoad}>
-            <link rel="stylesheet" href="./src/styles/signup.css"/>
+        <ShadowRoot onload={onShadowRootLoad} linkstyles={[signupCSS]}>
+            {/*<link rel="stylesheet" href="./src/styles/signup.css"/>*/}
             <div className="signup-block">
                 <div className="container">
                     <div className="content">

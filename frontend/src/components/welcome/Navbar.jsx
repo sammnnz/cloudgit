@@ -2,6 +2,8 @@ import React, {useRef} from "react";
 import { ShadowRoot } from "@/components/ShadowRoot";
 import NavbarLinks from "./NavbarLinks";
 import {getSessionLogout} from "@api/auth.jsx";
+import navbarCSS from "@/styles/welcome/navbar.module.css";
+import logoVariant from "@/static/img/logo-variant.svg";
 
 const Navbar = ({isAuth}) => {
     if ((isAuth instanceof Boolean))
@@ -25,12 +27,12 @@ const Navbar = ({isAuth}) => {
     }
 
     return (
-        <ShadowRoot onload={onShadowLoad}>
-            <link rel="stylesheet" href="./src/styles/welcome/navbar.css"/>
+        <ShadowRoot onload={onShadowLoad} linkstyles={[navbarCSS]}>
+            {/*<link rel="stylesheet" href="./src/styles/welcome/navbar.css"/>*/}
             <div className="navbar">
                 <div className="container">
                     <div className="logo">
-                        <img src="./src/static/img/logo-variant.svg" height="16px" alt=""/>
+                        <img src={logoVariant} height="16px" alt=""/>
                     </div>
                     <div className="content">
                         <NavbarLinks />

@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { lazy, Suspense } from "react";
 import Loading from "@/components/Loading";
-import { DEBUG } from "@/common/constants.jsx";
+import { DEBUG } from "@/common/constants";
 
 export const convertResponse = (response) => {
     if (response instanceof Error) return response?.response;
@@ -11,7 +11,7 @@ export const convertResponse = (response) => {
 export const getRequest = async (url, options = {}) => {
     return await axios.get(url, options)
     .then(response => {
-        console.log('GET-request successful.', DEBUG ? response : null);
+        console.log('GET-request successful.', DEBUG ? response : '');
         return response;
     })
     .catch(error => {
@@ -42,7 +42,7 @@ export const lazyLoad = (factory) => () => {
 export const postRequest = async (url, data, options = {}) => {
     return await axios.post(url, data, options)
     .then(response => {
-        console.log('GET-request successful.', DEBUG ? response : null);
+        console.log('GET-request successful.', DEBUG ? response : '');
         return response;
     })
     .catch(error => {

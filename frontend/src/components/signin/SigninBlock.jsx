@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { ShadowRoot } from "@/components/ShadowRoot";
 import { showServerError } from "@/common/utils";
 import { postSessionLogin } from "@/api/auth";
+import signupCSS from "@/styles/signup.module.css";
 
 const SigninBlock = () => {
     const
@@ -38,8 +39,8 @@ const SigninBlock = () => {
     }
 
     return (
-        <ShadowRoot onload={onShadowRootLoad}>
-            <link rel="stylesheet" href="./src/styles/signup.css"/>
+        <ShadowRoot onload={onShadowRootLoad} linkstyles={[signupCSS]}>
+            {/*<link rel="stylesheet" href="./src/styles/signup.css"/>*/}
             <div className="signup-block">
                 <div className="container">
                     <div className="content">
