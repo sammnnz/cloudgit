@@ -3,9 +3,10 @@ networks:
   cloudgit:
 
 services:
+  # docker build -t cloudgit-auth --build-context common=./backend/common  backend/services/auth
   auth:
     restart: always
-    build: ./backend/services/authentication
+    image: cloudgit-auth:latest
     container_name: auth
     security_opt:
       - no-new-privileges
@@ -20,6 +21,11 @@ services:
       - ./.env
     environment:
       DJANGO_DEBUG: ${DEBUG}
+      DJANGO_RABBITMQ_HOST: rabbitmq
+      DJANGO_RABBITMQ_PORT: ${RABBITMQ_NODE_PORT}
+      DJANGO_RABBITMQ_PASS: ${RABBITMQ_DEFAULT_PASS}
+      DJANGO_RABBITMQ_USER: ${RABBITMQ_DEFAULT_USER}
+      DJANGO_RABBITMQ_QUEUE: cloudgit_auth
       DJANGO_POSTGRES_DB_NAME: cloudgit_auth
       DJANGO_POSTGRES_HOST: auth_db
       DJANGO_POSTGRES_PORT: ${POSTGRES_PORT}
@@ -37,8 +43,12 @@ services:
       auth_db:
         condition: service_healthy
         restart: true
+      rabbitmq:
+        condition: service_started
+        restart: true
 
   auth_db:
+    restart: always
     image: postgres:16
     container_name: auth_db
     networks:
@@ -68,6 +78,9 @@ services:
       - cloudgit
     env_file:
       - ./.env
+    environment:
+      PGUSER: ${POSTGRES_USER}
+      POSTGRES_DB: ${AUTH_DB_NAME}
     ports:
       - 127.0.0.1:5080:80
     depends_on:
