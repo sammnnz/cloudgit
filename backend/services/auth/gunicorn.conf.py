@@ -1,6 +1,5 @@
 import os
 
-from dotenv import load_dotenv
 from multiprocessing import cpu_count
 
 
@@ -9,7 +8,7 @@ def max_workers():
 
 
 bind = '0.0.0.0:' + str(os.getenv('GUNICORN_PORT') or 8000)
-max_requests = 10000
+max_requests = 5000
 worker_class = 'gevent'
 workers = max_workers()
 
@@ -18,4 +17,4 @@ env = {
 }
 
 reload = True
-name = 'authentication'
+name = 'auth'

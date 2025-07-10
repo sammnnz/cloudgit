@@ -1,16 +1,13 @@
 """
-Django dev settings for authentication service.
+Django prod settings for authentication service.
+
 """
 import os
 
 from pathlib import Path
-from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # backend/
-
-load_dotenv(BASE_DIR / '.env')
-load_dotenv('dev/.env')
+BASE_DIR = Path(__file__).resolve().parent  # auth/
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -19,7 +16,7 @@ load_dotenv('dev/.env')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -72,7 +69,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'corsheaders',
     'rest_framework',
-    'authentication',
+    'apps.authentication',
 ]
 
 MIDDLEWARE = [
@@ -86,7 +83,16 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware'
 ]
 
-ROOT_URLCONF = 'authentication.urls'
+RABBITMQ = {
+    'host': os.getenv('DJANGO_RABBITMQ_HOST'),
+    'port': os.getenv('DJANGO_RABBITMQ_PORT'),
+    'user': os.getenv('DJANGO_RABBITMQ_USER'),
+    'password': os.getenv('DJANGO_RABBITMQ_PASS'),
+    'vhost': os.getenv('DJANGO_RABBITMQ_VHOST'),
+    'heartbeat': 60,
+}
+
+ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
     {
@@ -103,7 +109,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'authentication.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -116,10 +122,6 @@ DATABASES = {
         'PASSWORD': os.getenv('DJANGO_POSTGRES_PASSWORD'),
         'HOST': os.getenv('DJANGO_POSTGRES_HOST'),
         'PORT': os.getenv('DJANGO_POSTGRES_PORT')
-    },
-    'sqlite': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db_authentication.sqlite3',
     },
 }
 

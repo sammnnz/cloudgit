@@ -25,7 +25,7 @@ from django.http import JsonResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST, require_GET
-
+from common import rabbitmq
 # class CSRFView(generics.ListAPIView):
 #     """
 #     API endpoint for get CSRF Token.
