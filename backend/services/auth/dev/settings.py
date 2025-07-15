@@ -3,8 +3,8 @@ Django dev settings for authentication service.
 """
 import os
 
-from pathlib import Path
 from dotenv import load_dotenv
+from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # auth/
@@ -86,6 +86,15 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware'
 ]
 
+RABBITMQ = {
+    'host': os.getenv('DJANGO_RABBITMQ_HOST'),
+    'port': os.getenv('DJANGO_RABBITMQ_PORT'),
+    'user': os.getenv('DJANGO_RABBITMQ_USER'),
+    'password': os.getenv('DJANGO_RABBITMQ_PASS'),
+    'vhost': os.getenv('DJANGO_RABBITMQ_VHOST'),
+    'heartbeat': 60,
+}
+
 ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
@@ -103,7 +112,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'wsgi.application'
+ASGI_APPLICATION = 'server.asgi.application'
+WSGI_APPLICATION = 'server.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
