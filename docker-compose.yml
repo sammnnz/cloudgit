@@ -21,24 +21,25 @@ services:
       - ./.env
     environment:
       DJANGO_DEBUG: ${DEBUG}
-      DJANGO_RABBITMQ_HOST: rabbitmq
+      DJANGO_RABBITMQ_HOST: 'rabbitmq'
       DJANGO_RABBITMQ_PORT: ${RABBITMQ_NODE_PORT}
       DJANGO_RABBITMQ_PASS: ${RABBITMQ_DEFAULT_PASS}
       DJANGO_RABBITMQ_USER: ${RABBITMQ_DEFAULT_USER}
-      DJANGO_RABBITMQ_QUEUE: cloudgit_auth
+      DJANGO_RABBITMQ_VHOST: '/'
       DJANGO_POSTGRES_DB_NAME: cloudgit_auth
-      DJANGO_POSTGRES_HOST: auth_db
+      DJANGO_POSTGRES_HOST: 'auth_db'
       DJANGO_POSTGRES_PORT: ${POSTGRES_PORT}
       DJANGO_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DJANGO_POSTGRES_USER: ${POSTGRES_USER}
       DJANGO_SECRET_KEY: ${AUTH_SECRET_KEY}
       DJANGO_SETTINGS_MODULE: settings
+      GUNICORN_HOST: ${AUTH_HOST}
       GUNICORN_PORT: ${AUTH_PORT}
       REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}:${NGINX_EXT_PORT}
     command: >
       sh -c "
       python ./manage.py migrate &&
-      gunicorn -c gunicorn.conf.py wsgi:application"
+      python ./run.py"
     depends_on:
       auth_db:
         condition: service_healthy
