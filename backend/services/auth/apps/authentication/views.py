@@ -1,40 +1,17 @@
-# from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-# from rest_framework.permissions import IsAuthenticated
-# from rest_framework.response import Response
-# from rest_framework.views import APIView
-#
-#
-# class UsersView(APIView):
-#     authentication_classes = [SessionAuthentication, BasicAuthentication]
-#     permission_classes = [IsAuthenticated]
-#
-#     def get(self, request, format=None):
-#         content = {
-#             'user': str(request.user),  # `django.contrib.auth.User` instance.
-#             'auth': str(request.auth),  # None
-#         }
-#         return Response(content)
-
 import json
 
-from django.contrib.auth import authenticate, login, logout
+from common.rabbitmq import RabbitMQService
+from django.contrib.auth import aauthenticate, alogin, alogout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.http import JsonResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST, require_GET
-from common import rabbitmq
-# class CSRFView(generics.ListAPIView):
-#     """
-#     API endpoint for get CSRF Token.
-#     """
-#
-#     def get(self, request, *args, **kwargs):
-#         response = HttpResponse()
-#         response['X-CSRF-Token'] = get_token(request)
-#         return response
+# from asgiref.sync import sync_to_async, async_to_sync, iscoroutinefunction
+from .models import User
+
+rabbit = RabbitMQService()
 
 
 @require_GET
@@ -49,9 +26,9 @@ def csrf_view(request):
 
 @login_required
 @require_GET
-def session_clear_view(request):
+async def session_clear_view(request):
     sessions = Session.objects.all()
-    sessions.delete()
+    await sessions.adelete()
 
     return HttpResponse(status=200)
 
@@ -59,7 +36,6 @@ def session_clear_view(request):
 @ensure_csrf_cookie
 @require_GET
 def session_info_view(request):
-    # sleep(5)
     response = {
         'is_authenticated': False,
         'username': '',
@@ -75,42 +51,40 @@ def session_info_view(request):
 
 
 @require_POST
-def session_login_view(request):
+async def session_login_view(request):
     data = json.loads(request.body)
     username = data.get('username')
     password = data.get('password')
     if username is None or password is None:
         return HttpResponse(status=400)
 
-    user = authenticate(username=username, password=password)
+    user = await aauthenticate(username=username, password=password)
     if user is None:
         return HttpResponse(status=400)
 
-    login(request, user)
+    await alogin(request, user)
+    # rabbit.send(['to_repo'], user.username.encode('utf8'), 'cloudgit')
     return HttpResponse()
 
 
 @login_required
 @require_GET
-def session_logout_view(request):
-    if not request.user.is_authenticated:
-        return HttpResponse(status=400)
-
-    logout(request)
+async def session_logout_view(request):
+    await alogout(request)
     return HttpResponse(status=200)
 
 
 @require_GET
-def user_check_view(request, *args, **kwargs):
-    user = User.objects.filter(username=request.GET.get('name', ''))
-    if user.exists():
+async def user_check_view(request, *args, **kwargs):
+    user = await User.aget_user(name=request.GET.get('name', ''))
+    if user is not None:
         return HttpResponse(1)
 
     return HttpResponse(0)
 
 
 @require_POST
-def user_create_view(request, *args, **kwargs):
+async def user_create_view(request, *args, **kwargs):
     data = json.loads(request.body)
     username = data.get('username')
     email = data.get('email')
@@ -120,7 +94,7 @@ def user_create_view(request, *args, **kwargs):
 
     new_user = User(username=username, email=email)
     new_user.set_password(password)
-    new_user.save()
+    await new_user.asave()
     return HttpResponse(status=200)
 
 
