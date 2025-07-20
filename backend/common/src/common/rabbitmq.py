@@ -1,19 +1,23 @@
-""" RabbitMQ service for publishing and receiving messages. """
+""" Async RabbitMQ service for publishing and receiving messages. """
+import aio_pika
+import asyncio
 import logging
 
-from pika import BlockingConnection, ConnectionParameters, PlainCredentials
-from pika.adapters.blocking_connection import BlockingChannel
-from pika.exceptions import AMQPConnectionError, ChannelClosedByBroker, ChannelWrongStateError, \
-    ConnectionClosedByBroker, ConnectionWrongStateError, StreamLostError, AMQPError
-from time import sleep
-from types import FunctionType, MethodType, NoneType
-from typing import Optional, Union
+from aio_pika import exceptions
+from aio_pika.abc import AbstractRobustConnection, AbstractRobustChannel
+from aio_pika.message import Message
+from aiormq import ChannelPreconditionFailed
+from collections import deque
+from types import NoneType
+from typing import Optional, Union, Any
 
-from .utils import ProxyField
+from .utils import record, ProxyField, singleton, Counter
 
-__all__ = ['acknowledge', 'DummyConnection', 'RabbitMQService', 'RabbitMQServiceError']
+__all__ = ['acknowledge', 'ARabbitMQService']
 
-LOGGER = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+_LOGGER = logging.getLogger(__name__)
+_TIMEOUT = 10.0
 
 
 def acknowledge(on_message: callable):
@@ -21,304 +25,242 @@ def acknowledge(on_message: callable):
     Default wrapper for acknowledge the message after success run 'on_message'
     function.
     """
+    # TODO: impl acknowledge decorator
+    # def wrapper(ch, method, properties, body):
+    #     try:
+    #         on_message(ch, method, properties, body)
+    #     except Exception as e:
+    #         pass
+    #     else:
+    #         ch.basic_ack(delivery_tag=method.delivery_tag)  # Acknowledge the message
+    #
+    # return wrapper
 
-    def wrapper(ch, method, properties, body):
-        try:
-            on_message(ch, method, properties, body)
-        except Exception as e:
-            pass
-        else:
-            ch.basic_ack(delivery_tag=method.delivery_tag)  # Acknowledge the message
-
-    return wrapper
 
 
-class _RabbitMQMeta(type):
+@singleton
+class ARabbitMQService:
     __slots__ = ()
 
-    _service = None
+    # noinspection PyMethodParameters
+    def _on_close(proxy, value):
+        connection: AbstractRobustConnection = getattr(proxy, 'value', None)
+        if connection is None:
+            return
 
-    def __call__(cls, *args, **kwargs):
-        if not (cls is RabbitMQService):
-            raise TypeError("'_RabbitMQMeta' metaclass only for 'RabbitMQService' class.")
+        if not connection.is_closed:
+            asyncio.create_task(connection.close())
 
-        if isinstance(_RabbitMQMeta._service, RabbitMQService):
-            return _RabbitMQMeta._service
+    connection: Optional[AbstractRobustConnection] = ProxyField(
+        AbstractRobustConnection, NoneType,
+        onset=_on_close
+    )
+    params: dict[str, Any] = ProxyField(
+        dict,
+        readonly=True
+    )
 
-        instance = object.__new__(cls)
-        instance.__init__(*args, **kwargs)
-        _RabbitMQMeta._service = instance
-        return instance
-
-
-class DummyConnection:
-    __slots__ = ()
-
-    @property
-    def is_open(self):
-        return False
-
-    def channel(self, channel_number=None):
-        raise StreamLostError("Connection is not open or failed to reload.")
-
-    def close(self, reply_code=200, reply_text='Normal shutdown'):
-        pass
-
-
-def _record_message(fn):
-    """
-    Decorator to record messages.
-    """
-    messages = []
-
-    def wrapper(self, queues, message, exchange, repeat):
-        nonlocal messages
-        messages.append({'queues': queues, 'message': message, 'exchange': exchange, 'repeat': repeat})
-
-    return wrapper
-
-
-def _record_queues(fn):
-    """
-    Decorator to record queues for the RabbitMQ service.
-
-    Note: Only for RabbitMQService._declare_queues.
-
-    Raises:
-        TypeError
-    """
-    _exchanges = [None]
-    _queues = []
-
-    def wrapper(self, queues, exchange):
-        if not isinstance(queues, (list, tuple)):
-            raise TypeError("Queues must be a list or tuple.")
-
-        if not isinstance(exchange, (str, NoneType)):
-            raise TypeError("Exchange must be a string or None.")
-
-        if exchange not in _exchanges:
-            try:
-                self.channel.exchange_declare(exchange=exchange, exchange_type='direct', durable=True)
-            except ChannelWrongStateError as e:
-                return  # exchange already exists with other parameters
-            except (AttributeError, ConnectionClosedByBroker) as e:
-                return  # problems with channel
-            except AMQPError as e:
-                return
-
-            _exchanges.append(exchange)
-
-        for queue in queues:
-            if queue in _queues:
-                continue
-
-            if not isinstance(queue, str):
-                raise TypeError("Queue must be a string.")
-
-            try:
-                self.channel.queue_declare(queue=queue, durable=True)
-            except (AttributeError, ChannelClosedByBroker) as e:
-                return  # problems with channel or queue exists with other parameters
-            except AMQPError as e:
-                return
-
-            try:
-                if exchange is not None:
-                    self.channel.queue_bind(exchange=exchange, queue=queue, routing_key=queue)
-            except (AttributeError, ChannelClosedByBroker) as e:
-                return  # problems with channel
-            except AMQPError as e:
-                return
-
-            _queues.append(queue)
-
-    return wrapper
-
-
-# noinspection PyDunderSlots,PyUnresolvedReferences,PyArgumentList
-class RabbitMQService(metaclass=_RabbitMQMeta):
-    __slots__ = ()
-
-    channel = ProxyField(BlockingChannel, NoneType)
-    exchange_default = ProxyField(str, readonly=True)
-    connection = ProxyField(BlockingConnection, DummyConnection)
-    params = ProxyField(ConnectionParameters, readonly=True)
-
-    def __init__(self,
-                 host='localhost',
-                 port=5672,
-                 vhost='/',
-                 user='guest',
-                 password='guest',
-                 heartbeat=60,
+    def __init__(self, /, host='localhost', port=5672, vhost='/', user='guest', password='guest', heartbeat=60,
                  **kwargs):
-        self.params = ConnectionParameters(
-            host=host, port=port, virtual_host=vhost,
-            credentials=PlainCredentials(user, password), heartbeat=heartbeat, **kwargs
-        )
-        try:
-            self.connection = BlockingConnection(self.params)
-        except (RuntimeError, AMQPConnectionError) as e:
-            self.connection = DummyConnection()
+        self.connection = None
+        self.params = {'host': host, 'port': port, 'virtualhost': vhost, 'login': user, 'password': password,
+                       'timeout': heartbeat}
+        self.params.update(kwargs)
 
+    async def close(self):
         try:
-            self.channel = self.connection.channel()
-        except StreamLostError as e:
-            self.channel = None
+            await self.connection.close()
+        except exceptions.CONNECTION_EXCEPTIONS as e:
+            _LOGGER.warning("Problem with closing connection: %s \n"
+                           "May be connection already closed.", e.args[0])
 
-    @_record_queues
-    def _declare_queues(self,
-                        queues: Union[list[str], tuple[str, ...]],
-                        exchange: Optional[str]):
+    async def connect(self, repeat: int = -1, timeout: float = _TIMEOUT) -> None:
+        _LOGGER.info("Connecting to RabbitMQ...")
+        try:
+            if self.connection is None or self.connection.is_closed:
+                self.connection = await aio_pika.connect_robust(**self.params)
+                _LOGGER.info("Success connection to RabbitMQ.")
+        except exceptions.CONNECTION_EXCEPTIONS as e:
+            _LOGGER.error(e)
+            if repeat:
+                await asyncio.sleep(timeout)
+                await self.connect(repeat - 1)
+
+    @record
+    async def declare(self,
+                      channel: Optional[AbstractRobustChannel] = None,
+                      exchange: str = 'default',
+                      queues: Union[list[str], tuple[str, ...]] = ()) -> None:
         """
         Raises:
-             TypeError
+            ChannelPreconditionFailed: exchange or queue already exists with other parameters.
+            TypeError: exchange or queue has invalid type.
         """
+        if not isinstance(exchange, str):
+            raise TypeError("'exchange' must be a string.")
 
-    def _force_reload(self):
-        """
-        Raises:
-        """
-        if self.connection.is_open:
-            try:
-                self.connection.close()
-            except ConnectionWrongStateError:
-                pass
+        if not isinstance(queues, (list, tuple)):
+            raise TypeError("'queues' must be a list or tuple.")
 
+        if not isinstance(channel, (AbstractRobustChannel, NoneType)):
+            channel = None
+
+        ch = channel or await self.connection.channel()
+        record_data = yield {"exchanges": [], "queues": []}
         try:
-            self.connection = BlockingConnection(self.params)
-        except (RuntimeError, AMQPConnectionError) as e:
-            return False
-
-        return True
-
-    @_record_message
-    def _save_lost_message(self,
-                           queues: Union[list[str], tuple[str, ...]],
-                           message: bytes,
-                           exchange: str,
-                           repeat: int):
-        """
-        Raises:
-        """
-
-    def _update_channel(self):
-        """
-        Raises:
-            AMQPConnectionError
-            ConnectionWrongStateError
-        """
-        if not self.connection.is_open and not self._force_reload():
-            raise ConnectionWrongStateError("Connection is not open or failed to reload.")
-
-        try:
-            self.channel = self.connection.channel()
-        except StreamLostError as e:
-            if self._force_reload():
-                self.channel = self.connection.channel()
-            else:
-                raise AMQPConnectionError("Connection is not open or failed to reload.")
-
-    def get_lost_messages(self):
-        return self._save_lost_message.__closure__[0].cell_contents
-
-    def get_post_messages(self):
-        return self.post_message.__closure__[0].cell_contents
-
-    @_record_message
-    def post_message(self,
-                     queues: Union[list[str], tuple[str, ...]] = (),
-                     message: bytes = b'',
-                     exchange: str = '',
-                     repeat: int = 0):
-        pass
-
-    def receive(self,
-                queues: Union[list[str], tuple[str, ...]] = (),
-                on_message: callable = None,
-                restart: int = 0):
-        if not isinstance(on_message, (FunctionType, MethodType)):
-            def on_message(ch, method, properties, body):
-                print(f"Received message: {body.decode()}")
-
-        if not isinstance(restart, int) or restart < 0:
-            restart = 0
-
-        try:
-            cn = self.channel
-            if cn is not None and cn.is_open:
-                self._declare_queues(queues, None)
+            if exchange not in record_data['exchanges']:
+                await ch.declare_exchange(exchange, durable=True, robust=False)
+                record_data["exchanges"].append(exchange)
 
             for queue in queues:
+                if not isinstance(queue, str):
+                    raise TypeError("'queue' must be a string.")
+
+                if queue not in record_data['queues']:
+                    qu = await ch.declare_queue(queue, durable=True, robust=False)
+                    record_data["queues"].append(queue)
+                    await qu.bind(exchange=exchange, routing_key=queue)
+        except ChannelPreconditionFailed as e:
+            _LOGGER.error("exchange or queue already exists with other parameters.")
+            _LOGGER.error(e)
+            raise
+        finally:
+            if channel is None:
                 try:
-                    cn.basic_consume(queue=queue, on_message_callback=on_message, auto_ack=False)
-                except (AttributeError, AMQPError) as e:
-                    self._update_channel()
-                    cn = self.channel
-                    if cn is None or cn.is_closed:
-                        break
+                    await ch.close()
+                except Exception as e:
+                    _LOGGER.error(e)
+                else:
+                    _LOGGER.info(f"temp channel was closed: {ch}")
 
-                    self._declare_queues(queues, None)
-                    cn.basic_consume(queue=queue, on_message_callback=on_message, auto_ack=False)
-            else:
-                cn.start_consuming()
-                return
-        except TypeError as e:
-            pass  # invalid data types
-        except (AttributeError, AMQPError) as e:
-            pass  # connection failed
+    def run(self):
+        asyncio.create_task(self.connect())
 
-        if restart:
-            LOGGER.warning("RabbitMQ consuming is not running. Restarting...")
-            sleep(1)
-            self.receive(queues=queues, on_message=on_message, restart=restart - 1)
-
-    def send(self,
-             queues: Union[list[str], tuple[str, ...]] = (),
-             message: bytes = b'',
-             exchange: str = '',
-             repeat: int = 0):
-        if not isinstance(queues, (list, tuple)):
-            queues = ()
-
+    async def send(self,
+                   exchange: str = 'default',
+                   queues: Union[list[str], tuple[str, ...]] = (),
+                   message: bytes = b'',
+                   enable_errors: bool = False,
+                   repeat_on_error: int = -1) -> None:
+        """
+        Args:
+            exchange:
+            queues:
+            message:
+            enable_errors: if argument is False, then ignore all errors.
+             Default: False.
+            repeat_on_error: if argument < 0, then message will try to be sent 'indefinitely'.
+             If the connection is broken, the number of attempts to resend the message will not
+             be spent until the connection is restored.
+             Default: -1.
+        Raises:
+            ChannelPreconditionFailed: exchange or queue already exists with other parameters.
+            TypeError: exchange or queue or message has invalid type.
+             In case with invalid types, don't repeat send for any repeat_on_error argument.
+        """
         if not isinstance(message, bytes):
-            message = b''
+            if enable_errors:
+                raise TypeError("'message' must be a byte.")
 
-        if not isinstance(exchange, str):
-            exchange = ''
+            _LOGGER.error("'message' must be a byte.")
+            return
 
-        if not isinstance(repeat, int) or repeat < 0:
-            repeat = 0
+        if not isinstance(enable_errors, bool):
+            enable_errors = False
 
-        count, length = 0, len(queues)
+        if not isinstance(repeat_on_error, int):
+            repeat_on_error = -1
+
+        count = 0
         try:
-            cn = self.channel
-            if cn is not None and cn.is_open:
-                self._declare_queues(queues, exchange)
+            async with self.connection.channel() as ch:
+                await self.declare(ch, exchange, queues)
+                exc = await ch.get_exchange(exchange)
+                for queue in queues:
+                    await exc.publish(Message(message), queue)
+                    count += 1
+                    _LOGGER.info(f"Sending message success. Details: exchange - {exchange}, queue - {queue}, message - {message}.")
+        except (AttributeError, TypeError, *exceptions.CONNECTION_EXCEPTIONS) as e:
+            try:
+                _LOGGER.error(e)
+                if enable_errors:
+                    raise e
+            finally:
+                if not isinstance(e, TypeError) and repeat_on_error and count < len(queues):
+                    self._save_lost_messages(
+                        exchange,
+                        queues[count:len(queues)],
+                        message,
+                        repeat_on_error
+                    )
 
-            for k in range(length):
-                count = k
-                try:
-                    cn.basic_publish(exchange=exchange, routing_key=queues[k], body=message)
-                except (AttributeError, AMQPError) as e:
-                    self._update_channel()
-                    cn = self.channel
-                    if cn is None or cn.is_closed:
-                        break  # connection failed
+    def _get_lost_messages(self) -> deque:
+        contents = self._save_lost_messages.__closure__[0].cell_contents
+        try:
+            return contents[0]
+        except IndexError:
+            return contents
 
-                    self._declare_queues(queues, exchange)
-                    cn.basic_publish(exchange=exchange, routing_key=queues[k], body=message)
+    def _is_run_send_lost_messages(self) -> bool:
+        return not not self._send_lost_messages.__closure__[0].cell_contents[0]
+
+    @record
+    def _save_lost_messages(self,
+                   exchange: str,
+                   queues: Union[list[str], tuple[str, ...]],
+                   message: bytes,
+                   repeat_on_error: int) -> None:
+        record_data = yield deque()
+        record_data.append({
+            'exchange': exchange,
+            'queues': queues,
+            'message': message,
+            'enable_errors': True,
+            'repeat_on_error': max(repeat_on_error, -1)
+        })
+        if not self._is_run_send_lost_messages():
+            asyncio.create_task(self._send_lost_messages())
+
+    @Counter(max_count=1)
+    async def _send_lost_messages(self, big_timeout: float = _TIMEOUT, small_timeout: float = 1.0) -> None:
+        big_timeout = min(max(big_timeout, 5.0), 20.0)  # 5 <= big_timeout <= 20
+        small_timeout = max(min(small_timeout, 2.0), 0.1)  # 0.1 <= small_timeout <= 2
+        count, timeout = max(len(self._get_lost_messages()), 0x20), big_timeout
+        temp_queue = deque(maxlen=count)
+        while count:
+            await asyncio.sleep(timeout)
+            try:
+                count -= 1
+                msg = self._get_lost_messages().popleft()
+                _LOGGER.info(f"Sending lost message ... {msg}")
+                repeat = msg['repeat_on_error']
+                if repeat:
+                    msg['repeat_on_error'] = 0
+
+                await self.send(**msg)
+            except ChannelPreconditionFailed:  # problems with declare exchange or queue
+                if repeat:
+                    msg['repeat_on_error'] = max(repeat - 1, -1)
+                    temp_queue.appendleft(msg)
+
+                timeout = small_timeout
+            except (AttributeError, *exceptions.CONNECTION_EXCEPTIONS):  # connection problems (wait more time)
+                count += 1
+                msg['repeat_on_error'] = repeat
+                self._get_lost_messages().appendleft(msg)
+                timeout = big_timeout
+            except Exception as e:  # other (unknown) problems
+                _LOGGER.error(e)
+                if repeat:
+                    msg['repeat_on_error'] = max(repeat - 1, -1)
+                    temp_queue.appendleft(msg)
+
+                timeout = small_timeout
             else:
-                count = length
-        except TypeError as e:
-            pass  # invalid data types
-        except (AttributeError, AMQPError) as e:
-            pass  # connection failed
-
-        if count < length:
-            self._save_lost_message(queues[count:length], message, exchange, repeat)
-
-
-class RabbitMQServiceError(Exception):
-    pass
+                timeout = small_timeout
+            finally:
+                if not count:
+                    self._get_lost_messages().extendleft(temp_queue)
+                    temp_queue.clear()
+                    count = len(self._get_lost_messages())
+                    timeout = big_timeout
