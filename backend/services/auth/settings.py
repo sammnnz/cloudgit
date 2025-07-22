@@ -85,11 +85,17 @@ MIDDLEWARE = [
 
 RABBITMQ = {
     'host': os.getenv('DJANGO_RABBITMQ_HOST'),
-    'port': os.getenv('DJANGO_RABBITMQ_PORT'),
+    'port': int(os.getenv('DJANGO_RABBITMQ_PORT')),
     'user': os.getenv('DJANGO_RABBITMQ_USER'),
     'password': os.getenv('DJANGO_RABBITMQ_PASS'),
     'vhost': os.getenv('DJANGO_RABBITMQ_VHOST'),
     'heartbeat': 60,
+    'defaults': {
+        'exchange': 'cloudgit',
+        'queues': [
+
+        ]
+    }
 }
 
 ROOT_URLCONF = 'urls'

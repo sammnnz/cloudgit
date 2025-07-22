@@ -1,6 +1,7 @@
 import json
 
-from common.rabbitmq import RabbitMQService
+from common.rabbitmq import ARabbitMQService
+from common.utils import json_to_bytes
 from django.contrib.auth import aauthenticate, alogin, alogout
 from django.contrib.auth.decorators import login_required
 from django.contrib.sessions.models import Session
@@ -8,10 +9,9 @@ from django.http import JsonResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST, require_GET
-# from asgiref.sync import sync_to_async, async_to_sync, iscoroutinefunction
 from .models import User
 
-rabbit = RabbitMQService()
+rabbit = ARabbitMQService()
 
 
 @require_GET
@@ -63,7 +63,6 @@ async def session_login_view(request):
         return HttpResponse(status=400)
 
     await alogin(request, user)
-    # rabbit.send(['to_repo'], user.username.encode('utf8'), 'cloudgit')
     return HttpResponse()
 
 
@@ -76,7 +75,16 @@ async def session_logout_view(request):
 
 @require_GET
 async def user_check_view(request, *args, **kwargs):
-    user = await User.aget_user(name=request.GET.get('name', ''))
+    name = request.GET.get('name', '')
+    await rabbit.send(queues=['to_repo'], message=json_to_bytes(
+        {
+            "user": {
+                "action": 'check',
+                "username": name
+            }
+         }
+    ))  # DEBUG
+    user = await User.aget_user(name=name)
     if user is not None:
         return HttpResponse(1)
 
@@ -95,6 +103,14 @@ async def user_create_view(request, *args, **kwargs):
     new_user = User(username=username, email=email)
     new_user.set_password(password)
     await new_user.asave()
+    await rabbit.send(queues=['to_repo'], message=json_to_bytes(
+        {
+            "user": {
+                "action": 'check',
+                "id": new_user.pk
+            }
+        }
+    ))
     return HttpResponse(status=200)
 
 
