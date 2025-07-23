@@ -55,4 +55,4 @@ ENV PYTHONPATH=${SERVICE_FOLDER}
 
 USER 1001
 
-CMD [ "gunicorn", "-c", "gunicorn.conf.py", "wsgi:application" ]
+CMD [ "python", "run.py" ]

@@ -116,6 +116,8 @@ services:
     ports:
       - 127.0.0.1:5672:${RABBITMQ_NODE_PORT} # AMQP
       - 127.0.0.1:15672:15672                # management
+    networks:
+      - cloudgit
     volumes:
       - ~/.rabbitmq/data:/var/lib/rabbitmq
 
