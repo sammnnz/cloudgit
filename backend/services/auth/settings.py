@@ -61,6 +61,8 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
 
 # Application definition
 
+AUTH_USER_MODEL = "authentication.User"
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -85,7 +87,7 @@ MIDDLEWARE = [
 
 RABBITMQ = {
     'host': os.getenv('DJANGO_RABBITMQ_HOST'),
-    'port': int(os.getenv('DJANGO_RABBITMQ_PORT')),
+    'port': os.getenv('DJANGO_RABBITMQ_PORT'),
     'user': os.getenv('DJANGO_RABBITMQ_USER'),
     'password': os.getenv('DJANGO_RABBITMQ_PASS'),
     'vhost': os.getenv('DJANGO_RABBITMQ_VHOST'),
