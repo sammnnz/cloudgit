@@ -1,14 +1,12 @@
 import gunicorn.app.base
 
 from abc import ABC
-from server.asgi import application  # DJANGO_SETTINGS_MODULE init!
 from server import gunicorn_conf
 from types import ModuleType
 
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication, ABC):
-    def __init__(self, app, options=None):
-        self.app = app
+    def __init__(self, options=None):
         self.options = options if isinstance(options, ModuleType) else None
         super().__init__()
 
@@ -24,8 +22,9 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication, ABC):
                 self.cfg.set(key.lower(), getattr(self.options, key))
 
     def load(self):
-        return self.app
+        import server.asgi
+        return server.asgi.application
 
 
 if __name__ == "__main__":
-    StandaloneApplication(app=application, options=gunicorn_conf).run()
+    StandaloneApplication(options=gunicorn_conf).run()

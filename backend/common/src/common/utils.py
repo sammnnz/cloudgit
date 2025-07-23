@@ -12,11 +12,11 @@ from typing import Any, Coroutine
 __all__ = [
     "bytes_to_json",
     "CancelRepeatException",
-    "counter",
     "is_async",
     "is_async_generator",
     "is_generator",
     "json_to_bytes",
+    "lock",
     "record",
     "repeat",
     "ProxyField",
@@ -34,7 +34,7 @@ class CancelRepeatException(Exception):
 
 
 # noinspection PyPep8Naming
-class counter:
+class lock:
     __slots__ = ('max_count',)
 
     def __init__(self, max_count=1):

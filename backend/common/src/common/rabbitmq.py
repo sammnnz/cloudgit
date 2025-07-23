@@ -12,7 +12,7 @@ from functools import partial, wraps
 from types import NoneType
 from typing import Any, Awaitable, Callable, Optional, Union
 
-from .utils import counter, is_async, record, repeat, singleton
+from .utils import is_async, lock, record, repeat, singleton
 
 __all__ = ['ARabbitMQService', 'consume_callback', 'parse_settings']
 
@@ -201,7 +201,10 @@ class ProxyConnection:
             raise TypeError("Connection must be an instance of AbstractRobustConnection or None.")
 
         if self.connection and not self.connection.is_closed:
-            asyncio.create_task(instance.close())
+            try:
+                asyncio.create_task(instance.close())
+            except RuntimeError:
+                LOGGER.warning("Problem with closing RabbitMQ connection. Event Loop doesn't exists.")
 
         self.connection = value
 
@@ -223,11 +226,11 @@ class ARabbitMQService:
         self.defaults.update(defaults or {})
         self.params = {
             'host': host,
-            'port': port,
+            'port': int(port or 5672),
             'virtualhost': vhost,
             'login': user,
             'password': password,
-            'timeout': heartbeat
+            'timeout': float(heartbeat or 60)
         }
         self.params.update(kwargs)
 
@@ -244,7 +247,7 @@ class ARabbitMQService:
     async def _connect(self) -> None:
         LOGGER.info("Connecting to RabbitMQ...")
         if self.connection is None or self.connection.is_closed:
-            self.connection = await aio_pika.connect_robust(**self.params)
+            setattr(self, "connection", await aio_pika.connect_robust(**self.params))
             LOGGER.info("Success connection to RabbitMQ.")
 
     def connect(self, reload_timeout=DEFAULT_TIMEOUT):
@@ -252,7 +255,10 @@ class ARabbitMQService:
                           count=-1,
                           exceptions=exceptions.CONNECTION_EXCEPTIONS,
                           timeout=reload_timeout)
-        asyncio.create_task(repeater(self._connect)())
+        try:
+            asyncio.create_task(repeater(self._connect)())
+        except RuntimeError:
+            LOGGER.warning("Problem with connecting to RabbitMQ. Event Loop doesn't exists.")
 
     @record
     async def _consume(self,
@@ -304,7 +310,10 @@ class ARabbitMQService:
                          queue=queue,
                          prefetch_count=prefetch_count,
                          timeout=consume_timeout)
-            asyncio.create_task(fn())
+            try:
+                asyncio.create_task(fn())
+            except RuntimeError:
+                LOGGER.warning(f"Problem with consuming '{queue}' queue. Event Loop doesn't exists.")
 
     @property
     def consumers(self):
@@ -476,7 +485,7 @@ class ARabbitMQService:
         if not self._is_run_send_lost_messages():
             asyncio.create_task(self._send_lost_messages())
 
-    @counter(max_count=1)
+    @lock(max_count=1)
     async def _send_lost_messages(self, big_timeout: float = DEFAULT_TIMEOUT, small_timeout: float = 1.0) -> None:
         big_timeout = min(max(big_timeout, 5.0), 20.0)  # 5 <= big_timeout <= 20
         small_timeout = max(min(small_timeout, 2.0), 0.1)  # 0.1 <= small_timeout <= 2
