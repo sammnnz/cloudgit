@@ -23,3 +23,9 @@ export default defineConfig({
         target: "es2017",
     },
 });
+
+// NOTE:
+//  Description: React problem with run vite server on windows.
+//  Shell: `TypeError [ERR_INVALID_URL_SCHEME]: The URL must be of scheme file`
+//  Solution: https://www.reddit.com/r/tunarr/comments/1ejwktj/the_url_must_be_of_scheme_file/
+//  Status: Not dangerous

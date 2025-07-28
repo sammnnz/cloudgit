@@ -5,10 +5,9 @@ Django prod settings for authentication service.
 import os
 
 from pathlib import Path
-from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
+BASE_DIR = Path(__file__).resolve().parent  # auth/
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -62,6 +61,8 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
 
 # Application definition
 
+AUTH_USER_MODEL = "authentication.User"
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -69,8 +70,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',  # for admin
     'django.contrib.sessions',
     'corsheaders',
-    'rest_framework',
-    'authentication',
+    'apps.authentication',
 ]
 
 MIDDLEWARE = [
@@ -84,7 +84,22 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware'
 ]
 
-ROOT_URLCONF = 'authentication.urls'
+RABBITMQ = {
+    'host': os.getenv('DJANGO_RABBITMQ_HOST'),
+    'port': os.getenv('DJANGO_RABBITMQ_PORT'),
+    'user': os.getenv('DJANGO_RABBITMQ_USER'),
+    'password': os.getenv('DJANGO_RABBITMQ_PASS'),
+    'vhost': os.getenv('DJANGO_RABBITMQ_VHOST'),
+    'heartbeat': 60,
+    'defaults': {
+        'exchange': 'cloudgit',
+        'queues': [
+
+        ]
+    }
+}
+
+ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
     {
@@ -101,7 +116,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'authentication.wsgi.application'
+ASGI_APPLICATION = 'server.asgi.application'
+WSGI_APPLICATION = 'server.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -126,6 +142,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
