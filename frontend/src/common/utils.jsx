@@ -8,6 +8,28 @@ export const convertResponse = (response) => {
     return response;
 }
 
+export const convertResponseData = (response) => {
+    if (!response)
+        return undefined
+
+    if (typeof response.data === "undefined")
+        return undefined
+
+    if (typeof response.data === "string")
+        return response.data
+
+    if (typeof response.data === "object") {
+        const detail = response.data.detail;
+        if (detail instanceof String)
+            return detail
+
+        if (detail instanceof Array && detail.length && typeof detail[0] === "object")
+            return detail[0].msg
+    }
+
+    return undefined
+}
+
 export const getRequest = async (url, options = {}) => {
     return await axios.get(url, options)
     .then(response => {
@@ -51,12 +73,16 @@ export const postRequest = async (url, data, options = {}) => {
     });
 }
 
-export const showServerError = (
-    error = undefined,
-    msg = "Sorry, some problem with server. Please try again later.") => {
-    if (+error?.response?.status === 500) {
-        console.error("Server error: ", DEBUG ? error : error?.message ? error.message : msg);
-    }
+export const showServerMessage = (
+    response = undefined,
+    msg = undefined,
+    is_alert = true) => {
+    if (DEBUG)
+        console.error("Server error: ", response);
 
-    alert(msg);
+    if (is_alert)
+        if (msg)
+            alert(msg);
+        else
+            alert("Sorry, some problem with server. Please try again later.");
 }

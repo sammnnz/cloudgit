@@ -4,12 +4,12 @@ import Header from "@/components/Header";
 import Navbar from "@/components/welcome/Navbar";
 import WelcomeBlock from "@/components/welcome/WelcomeBlock";
 import Footer from "@/components/Footer";
-import {showServerError} from "@common/utils.jsx";
+import {showServerMessage} from "@common/utils.jsx";
 
 const Welcome = () => {
     const data = useLoaderData(),
         {session} = data;
-    if (!session) showServerError();
+    if (!session) showServerMessage();
 
     return (
         <div className="welcome-container">

@@ -3,12 +3,12 @@ import { useLoaderData } from "react-router";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SignupBlock from "@/components/signup/SignupBlock";
-import {showServerError} from "@common/utils";
+import {showServerMessage} from "@common/utils";
 
 const Signup = () => {
     const data = useLoaderData(),
         {session} = data;
-    if (!session) showServerError();
+    if (!session) showServerMessage();
 
     return (
         <div className="signup-container">

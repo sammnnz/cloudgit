@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { ShadowRoot } from "@/components/ShadowRoot";
-import { showServerError } from "@/common/utils";
+import {convertResponseData, showServerMessage} from "@/common/utils";
 import { postSessionLogin } from "@/api/auth";
 import signupCSS from "@/styles/signup.module.css";
 
@@ -15,21 +15,22 @@ const SigninBlock = () => {
     // WARNING: Not use `useState` hook
     const signIn = async (e) => {
         const response = await postSessionLogin(
-            usernameRef.current?.value, passwordRef.current?.value);
-        if (+response?.status === 200) {
+            usernameRef.current?.value, passwordRef.current?.value),
+            codeErrors = [404, 422],
+            errorMsg = convertResponseData(response),
+            status = +response?.status;
+        if (200 <= status && status < 300) {
             window.location.href = "/dashboard";
             return;
         }
-        else if (+response?.status === 400)
-            alert("Invalid username or password. Please check your input.");
-        else if (+response?.status === 403) {
+        else if (status === 403) {
             alert("No access to account.");
             console.warn("Warning: CSRF-Token was not received.");
         }
-        else if (+response?.status === 404)
-            showServerError(response);
-        else if (!response)
-            showServerError(response);
+        else if (codeErrors.includes(status))
+            showServerMessage(response, errorMsg);
+        else if (response)
+            showServerMessage(response);
 
         buttonRef.current.addEventListener('click', signIn, {once: true});
     }
