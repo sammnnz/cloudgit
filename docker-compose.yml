@@ -3,9 +3,10 @@ networks:
   cloudgit:
 
 services:
+  # docker build -t cloudgit-auth --build-context common=./backend/common  backend/services/auth
   auth:
     restart: always
-    build: ./backend/services/authentication
+    image: cloudgit-auth:latest
     container_name: auth
     security_opt:
       - no-new-privileges
@@ -20,25 +21,35 @@ services:
       - ./.env
     environment:
       DJANGO_DEBUG: ${DEBUG}
+      DJANGO_RABBITMQ_HOST: 'rabbitmq'
+      DJANGO_RABBITMQ_PORT: ${RABBITMQ_NODE_PORT}
+      DJANGO_RABBITMQ_PASS: ${RABBITMQ_DEFAULT_PASS}
+      DJANGO_RABBITMQ_USER: ${RABBITMQ_DEFAULT_USER}
+      DJANGO_RABBITMQ_VHOST: '/'
       DJANGO_POSTGRES_DB_NAME: cloudgit_auth
-      DJANGO_POSTGRES_HOST: auth_db
+      DJANGO_POSTGRES_HOST: 'auth_db'
       DJANGO_POSTGRES_PORT: ${POSTGRES_PORT}
       DJANGO_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DJANGO_POSTGRES_USER: ${POSTGRES_USER}
       DJANGO_SECRET_KEY: ${AUTH_SECRET_KEY}
       DJANGO_SETTINGS_MODULE: settings
+      GUNICORN_HOST: ${AUTH_HOST}
       GUNICORN_PORT: ${AUTH_PORT}
       REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}:${NGINX_EXT_PORT}
     command: >
       sh -c "
       python ./manage.py migrate &&
-      gunicorn -c gunicorn.conf.py wsgi:application"
+      python ./run.py"
     depends_on:
       auth_db:
         condition: service_healthy
         restart: true
+      rabbitmq:
+        condition: service_started
+        restart: true
 
   auth_db:
+    restart: always
     image: postgres:16
     container_name: auth_db
     networks:
@@ -68,6 +79,9 @@ services:
       - cloudgit
     env_file:
       - ./.env
+    environment:
+      PGUSER: ${POSTGRES_USER}
+      POSTGRES_DB: ${AUTH_DB_NAME}
     ports:
       - 127.0.0.1:5080:80
     depends_on:
@@ -102,6 +116,8 @@ services:
     ports:
       - 127.0.0.1:5672:${RABBITMQ_NODE_PORT} # AMQP
       - 127.0.0.1:15672:15672                # management
+    networks:
+      - cloudgit
     volumes:
       - ~/.rabbitmq/data:/var/lib/rabbitmq
 

@@ -3,7 +3,7 @@ import { BACKEND_URL } from "@/common/constants";
 
 export const url = BACKEND_URL + '/api/auth/';
 export const getCSRFToken = async () => {
-    const response = await getRequest(url + 'csrf/', {
+    const response = await getRequest(url + 'session/csrf/', {
         withCredentials: true
     }),
         token = response?.headers?.get('X-CSRF-Token');
@@ -29,7 +29,7 @@ export const getSessionLogout = async () => {
 }
 
 export const getUserCheck = async (username) => {
-    const response = await getRequest(url + `user/check?name=${username}`, {
+    const response = await getRequest(url + `user/check?username=${username}`, {
         withCredentials: true,
     });
     return convertResponse(response);
@@ -37,11 +37,11 @@ export const getUserCheck = async (username) => {
 
 export const isUserExists = async (username) => {
     const response = await getUserCheck(username);
-    if (+response?.status !== 200) {
+    if (+response?.status >= 300 && +response?.status < 200) {
         return;
     }
 
-    return !!+response?.data;
+    return !!response?.data;
 }
 
 export const postSessionLogin = async (username, password) => {
@@ -59,6 +59,19 @@ export const postSessionLogin = async (username, password) => {
 export const postUserCreate = async (username, email, password) => {
     const response = await postRequest(url + 'user/create/',
         { username, email, password },
+        {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': await getCSRFToken(),
+        },
+        withCredentials: true,
+    });
+    return convertResponse(response);
+}
+
+export const postUserDelete = async () => {
+    const response = await postRequest(url + 'user/delete/',
+        {},
         {
         headers: {
             'Content-Type': 'application/json',

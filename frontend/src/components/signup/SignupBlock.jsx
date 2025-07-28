@@ -1,6 +1,6 @@
 import React, {useRef, useState} from "react";
 import { ShadowRoot } from "@/components/ShadowRoot";
-import {isEmailValid, isUsernameValid, showServerError} from "@common/utils";
+import {convertResponseData, isEmailValid, isUsernameValid, showServerMessage} from "@common/utils";
 import validator from "validator/es";
 import {isUserExists, postSessionLogin, postUserCreate} from "@/api/auth";
 import signupCSS from "@/styles/signup.module.css";
@@ -58,7 +58,7 @@ const SignupBlock = () => {
                 setUsernameMessage("");
                 e.target.classList.remove("input-error");
             }
-        }, 2000, username));
+        }, 1000, username));
     }
 
     const updateEmail = (e) => {
@@ -130,27 +130,30 @@ const SignupBlock = () => {
         }
 
         let response = await postUserCreate(
-            username.value, email.value, password.value);
+            username.value, email.value, password.value
+        ),
+            codeErrors = [404, 422],
+            errorMsg = convertResponseData(response),
+            status = +response?.status;
 
-        if (+response?.status === 200) {
+        if (200 <= status && status < 300) {
             response = await postSessionLogin(username.value, password.value);
-            if (+response?.status === 200) {
+            if (200 <= status && status < 300) {
                 window.location.href = "/dashboard";
                 return;
             }
 
-            showServerError(response, `User ${username.value} was created, ` +
+            showServerMessage(response, `User ${username.value} was created, ` +
             `but due to server problems we were unable to authorize him.`);
         }
-        else if (+response?.status === 400)
-            alert("Invalid data. Please check your input.");
-        else if (+response?.status === 403) {
+        else if (status === 403)
             console.warn("Warning: CSRF-Token was not received.");
-        }
-        else if (+response?.status === 404)
-            showServerError(response);
-        else if (!response)
-            showServerError(response);
+        else if (codeErrors.includes(status))
+            showServerMessage(response, errorMsg);
+        else if (response)
+            showServerMessage(response);
+
+        buttonRef.current.addEventListener('click', signUp, {once: true});
     }
 
     const onShadowRootLoad = () => {
