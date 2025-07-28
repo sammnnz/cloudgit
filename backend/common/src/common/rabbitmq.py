@@ -202,7 +202,8 @@ class ProxyConnection:
 
         if self.connection and not self.connection.is_closed:
             try:
-                asyncio.create_task(instance.close())
+                loop = asyncio.get_running_loop()
+                loop.create_task(instance.close())
             except RuntimeError:
                 LOGGER.warning("Problem with closing RabbitMQ connection. Event Loop doesn't exists.")
 
@@ -256,7 +257,8 @@ class ARabbitMQService:
                           exceptions=exceptions.CONNECTION_EXCEPTIONS,
                           timeout=reload_timeout)
         try:
-            asyncio.create_task(repeater(self._connect)())
+            loop = asyncio.get_running_loop()
+            loop.create_task(repeater(self._connect)())
         except RuntimeError:
             LOGGER.warning("Problem with connecting to RabbitMQ. Event Loop doesn't exists.")
 
@@ -311,7 +313,8 @@ class ARabbitMQService:
                          prefetch_count=prefetch_count,
                          timeout=consume_timeout)
             try:
-                asyncio.create_task(fn())
+                loop = asyncio.get_running_loop()
+                loop.create_task(fn())
             except RuntimeError:
                 LOGGER.warning(f"Problem with consuming '{queue}' queue. Event Loop doesn't exists.")
 
@@ -483,7 +486,11 @@ class ARabbitMQService:
             'repeat_on_error': max(repeat_on_error, -1)
         })
         if not self._is_run_send_lost_messages():
-            asyncio.create_task(self._send_lost_messages())
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self._send_lost_messages())
+            except RuntimeError:
+                LOGGER.warning("Failed to send lost messages. Event Loop doesn't exists.")
 
     @lock(max_count=1)
     async def _send_lost_messages(self, big_timeout: float = DEFAULT_TIMEOUT, small_timeout: float = 1.0) -> None:

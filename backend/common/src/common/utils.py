@@ -11,7 +11,6 @@ from typing import Any, Coroutine
 
 __all__ = [
     "bytes_to_json",
-    "CancelRepeatException",
     "is_async",
     "is_async_generator",
     "is_generator",
@@ -27,10 +26,6 @@ __all__ = [
 logging.basicConfig(level=logging.INFO)
 
 LOGGER = logging.getLogger(__name__)
-
-
-class CancelRepeatException(Exception):
-    pass
 
 
 # noinspection PyPep8Naming
@@ -187,6 +182,9 @@ def record(fn) -> Callable[..., Coroutine[Any, Any, Any]]:
     Note:
         For generator functions or asynchronous generator functions.
     """
+    if not isinstance(fn, (FunctionType, MethodType)):
+        raise TypeError(f"'{fn}' must be function or method.")
+
     data = []
 
     if is_async_generator(fn):
