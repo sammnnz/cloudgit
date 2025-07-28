@@ -70,7 +70,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',  # for admin
     'django.contrib.sessions',
     'corsheaders',
-    'rest_framework',
     'apps.authentication',
 ]
 
@@ -143,6 +142,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
