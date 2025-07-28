@@ -1,21 +1,22 @@
-import json
-
 from common.rabbitmq import ARabbitMQService
 from common.utils import json_to_bytes
 from django.contrib.auth import aauthenticate, alogin, alogout
 from django.contrib.auth.decorators import login_required
-from django.contrib.sessions.models import Session
-from django.http import JsonResponse, HttpResponse
+from django.db import IntegrityError
+from django.http import HttpResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST, require_GET
+from ninja import Router
 from .models import User
+from .schema import SessionInfoOut, SessionLoginIn, UserOutSchema, RabbitSchema, UserInSchema
 
 rabbit = ARabbitMQService()
+router = Router()
 
 
-@require_GET
-def csrf_view(request):
+@router.get('/session/csrf/')
+@ensure_csrf_cookie
+def session_csrf(request):
     """
     API endpoint for get CSRF Token.
     """
@@ -24,97 +25,62 @@ def csrf_view(request):
     return response
 
 
-@login_required
-@require_GET
-async def session_clear_view(request):
-    sessions = Session.objects.all()
-    await sessions.adelete()
-
-    return HttpResponse(status=200)
+@router.get('/session/info/', response=SessionInfoOut)
+def session_info(request):
+    return request.user
 
 
-@ensure_csrf_cookie
-@require_GET
-def session_info_view(request):
-    response = {
-        'is_authenticated': False,
-        'username': '',
-        'user_id': 0
-    }
-    if not request.user.is_authenticated:
-        return JsonResponse(response)
-
-    response['is_authenticated'] = True
-    response['username'] = request.user.username
-    response['user_id'] = request.user.id
-    return JsonResponse(response)
-
-
-@require_POST
-async def session_login_view(request):
-    data = json.loads(request.body)
-    username = data.get('username')
-    password = data.get('password')
-    if username is None or password is None:
-        return HttpResponse(status=400)
-
-    user = await aauthenticate(username=username, password=password)
+@router.post('/session/login/', response={204: None, 422: str})
+async def session_login(request, data: SessionLoginIn):
+    user = await aauthenticate(username=data.username, password=data.password)
     if user is None:
-        return HttpResponse(status=400)
+        return 422, "Username or password invalid."
 
     await alogin(request, user)
-    return HttpResponse()
+    return 204, None
 
 
+@router.get('/session/logout/', response={204: None})
 @login_required
-@require_GET
-async def session_logout_view(request):
+async def session_logout(request):
     await alogout(request)
-    return HttpResponse(status=200)
+    return 204, None
 
 
-@require_GET
-async def user_check_view(request, *args, **kwargs):
-    name = request.GET.get('name', '')
-    await rabbit.send(queues=['to_repo'], message=json_to_bytes(
-        {
-            "user": {
-                "action": 'check',
-                "username": name
-            }
-         }
-    ))  # DEBUG
-    user = await User.aget_user(name=name)
+@router.get('/user/check', response={200: bool})
+async def user_check(request, username: str):
+    user = await User.objects.aget_safe(username=username)
     if user is not None:
-        return HttpResponse(1)
+        return 200, True
 
-    return HttpResponse(0)
-
-
-@require_POST
-async def user_create_view(request, *args, **kwargs):
-    data = json.loads(request.body)
-    username = data.get('username')
-    email = data.get('email')
-    password = data.get('password')
-    if username is None or email is None or password is None:
-        return HttpResponse(status=400)
-
-    new_user = User(username=username, email=email)
-    new_user.set_password(password)
-    await new_user.asave()
-    await rabbit.send(queues=['to_repo'], message=json_to_bytes(
-        {
-            "user": {
-                "action": 'check',
-                "id": new_user.pk
-            }
-        }
-    ))
-    return HttpResponse(status=200)
+    return 200, False
 
 
+@router.post('/user/create/', response={204: None, 422: str})
+async def user_create(request, data: UserInSchema):
+    try:
+        new_user = await User.objects.acreate_user(
+            data.username, data.email, data.password
+        )
+    except IntegrityError:
+        return 422, f"User with username '{data.username}' or email '{data.email}' already exists."
+
+    msg = RabbitSchema.from_orm(new_user, action="create").model_dump()
+    await rabbit.send(queues=['to_repo'], message=json_to_bytes(msg))
+    return 204, None
+
+
+@router.post('/user/delete/', response={204: None, 422: str})
 @login_required
-@require_GET
-def user_info_view(request):
-    return JsonResponse({'username': request.user.username})
+async def user_delete(request):
+    user = await getattr(request, "auser")()
+    msg = RabbitSchema.from_orm(user, action="delete").model_dump()
+    await user.adelete()
+    await rabbit.send(queues=['to_repo'], message=json_to_bytes(msg))
+    return 204, None
+
+
+@router.get('/user/info/', response=UserOutSchema)
+@login_required
+def user_info(request):
+    return request.user
