@@ -4,6 +4,8 @@ from settings import BASE_DIR
 
 if __name__ == '__main__':
     uvicorn.run(app="server.asgi:application",
+                host="127.0.0.1",
+                port=8000,
                 lifespan="off",
                 reload=True,
                 reload_dirs=[
