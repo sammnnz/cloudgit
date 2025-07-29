@@ -26,11 +26,11 @@ services:
       DJANGO_RABBITMQ_PASS: ${RABBITMQ_DEFAULT_PASS}
       DJANGO_RABBITMQ_USER: ${RABBITMQ_DEFAULT_USER}
       DJANGO_RABBITMQ_VHOST: '/'
-      DJANGO_POSTGRES_DB_NAME: cloudgit_auth
+      DJANGO_POSTGRES_DB_NAME: ${AUTH_DB_NAME}
       DJANGO_POSTGRES_HOST: 'auth_db'
       DJANGO_POSTGRES_PORT: ${POSTGRES_PORT}
-      DJANGO_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      DJANGO_POSTGRES_USER: ${POSTGRES_USER}
+      DJANGO_POSTGRES_PASSWORD: ${CLOUDGIT_PASSWORD}
+      DJANGO_POSTGRES_USER: ${CLOUDGIT_USER}
       DJANGO_SECRET_KEY: ${AUTH_SECRET_KEY}
       DJANGO_SETTINGS_MODULE: settings
       GUNICORN_HOST: ${AUTH_HOST}
@@ -50,26 +50,96 @@ services:
 
   auth_db:
     restart: always
-    image: postgres:16
+    build:
+      context: ./backend/services/auth/db
+      args:
+        PGDATA: ${PGDATA}
+        POSTGRES_DB: ${AUTH_DB_NAME}
+        POSTGRES_USER: ${CLOUDGIT_USER}
+        POSTGRES_PASSWORD: ${CLOUDGIT_PASSWORD}
     container_name: auth_db
     networks:
       - cloudgit
     env_file:
       - ./.env
-    environment:
-      PGDATA: /var/lib/postgresql/data
-      PGUSER: ${POSTGRES_USER}
-      POSTGRES_DB: ${AUTH_DB_NAME}
-      POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      test: [ "CMD-SHELL", "pg_isready -d $${AUTH_DB_NAME} -U $${CLOUDGIT_USER}" ]
       interval: 10s
       timeout: 10s
       retries: 5
     ports:
       - 127.0.0.1:5430:${POSTGRES_PORT}
     volumes:
-      - ~/.pg/pg_data/auth:/var/lib/postgresql/data
+      - auth_db_data:${PGDATA}
+
+  # docker build -t cloudgit-auth --build-context common=./backend/common  backend/services/auth
+  repo:
+    restart: always
+    image: cloudgit-repo:latest
+    container_name: repo
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
+    user: "1002:1001"
+    networks:
+      - cloudgit
+    ports:
+      - 127.0.0.1:8001:${REPO_PORT}
+    env_file:
+      - ./.env
+    environment:
+      DJANGO_DEBUG: ${DEBUG}
+      DJANGO_RABBITMQ_HOST: 'rabbitmq'
+      DJANGO_RABBITMQ_PORT: ${RABBITMQ_NODE_PORT}
+      DJANGO_RABBITMQ_PASS: ${RABBITMQ_DEFAULT_PASS}
+      DJANGO_RABBITMQ_USER: ${RABBITMQ_DEFAULT_USER}
+      DJANGO_RABBITMQ_VHOST: '/'
+      DJANGO_POSTGRES_DB_NAME: ${REPO_DB_NAME}
+      DJANGO_POSTGRES_HOST: 'repo_db'
+      DJANGO_POSTGRES_PORT: ${POSTGRES_PORT}
+      DJANGO_POSTGRES_PASSWORD: ${CLOUDGIT_PASSWORD}
+      DJANGO_POSTGRES_USER: ${CLOUDGIT_USER}
+      DJANGO_SECRET_KEY: ${REPO_SECRET_KEY}
+      DJANGO_SETTINGS_MODULE: settings
+      GUNICORN_HOST: ${REPO_HOST}
+      GUNICORN_PORT: ${REPO_PORT}
+      REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}:${NGINX_EXT_PORT}
+    command: >
+      sh -c "
+      python ./manage.py migrate &&
+      python ./run.py"
+    depends_on:
+      auth_db:
+        condition: service_healthy
+        restart: true
+      rabbitmq:
+        condition: service_started
+        restart: true
+
+  repo_db:
+    restart: always
+    build:
+      context: ./backend/services/repo/db
+      args:
+        PGDATA: ${PGDATA}
+        POSTGRES_DB: ${REPO_DB_NAME}
+        POSTGRES_USER: ${CLOUDGIT_USER}
+        POSTGRES_PASSWORD: ${CLOUDGIT_PASSWORD}
+    container_name: repo_db
+    networks:
+      - cloudgit
+    env_file:
+      - ./.env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${REPO_DB_NAME} -U $${CLOUDGIT_USER}" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    ports:
+      - 127.0.0.1:5429:${POSTGRES_PORT}
+    volumes:
+      - repo_db_data:${PGDATA}
   
   pgadmin:
     restart: always
@@ -119,7 +189,7 @@ services:
     networks:
       - cloudgit
     volumes:
-      - ~/.rabbitmq/data:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
 
   nginx:
     restart: always
@@ -130,7 +200,7 @@ services:
         FRONTEND_PORT: ${FRONTEND_PORT}
         RABBITMQ_NODE_PORT: ${RABBITMQ_NODE_PORT}
     container_name: nginx
-    user: "1002:1001"
+    user: "1011:1001"
     env_file:
       - ./.env
     ports:
@@ -141,3 +211,8 @@ services:
       - rabbitmq
       - frontend
       - auth
+
+volumes:
+  auth_db_data:
+  repo_db_data:
+  rabbitmq_data:
