@@ -62,10 +62,11 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.admin',
     'django.contrib.contenttypes',
+    'django.contrib.messages',  # for admin
     'corsheaders',
-    'rest_framework',
-    'repo',
+    'apps.repo',
 ]
 
 MIDDLEWARE = [
@@ -73,10 +74,26 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',  # for admin
     'corsheaders.middleware.CorsMiddleware'
 ]
 
-ROOT_URLCONF = 'repo.urls'
+RABBITMQ = {
+    'host': os.getenv('DJANGO_RABBITMQ_HOST'),
+    'port': os.getenv('DJANGO_RABBITMQ_PORT'),
+    'user': os.getenv('DJANGO_RABBITMQ_USER'),
+    'password': os.getenv('DJANGO_RABBITMQ_PASS'),
+    'vhost': os.getenv('DJANGO_RABBITMQ_VHOST'),
+    'heartbeat': 60,
+    'defaults': {
+        'exchange': 'cloudgit',
+        'queues': [
+
+        ]
+    }
+}
+
+ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
     {
@@ -93,7 +110,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'repo.wsgi.application'
+ASGI_APPLICATION = 'server.asgi.application'
+WSGI_APPLICATION = 'server.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -108,24 +126,6 @@ DATABASES = {
         'PORT': os.getenv('DJANGO_POSTGRES_PORT')
     },
 }
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

@@ -2,30 +2,37 @@
 name = "repo"
 version = "0.1.0"
 description = "\"Service for maintaining repositories\""
+license = "Apache-2.0"
 authors = [
-    {name = "Sam Nazarov",email = "samnnazarov@gmail.com"}
+    {name = "Sam Nazarov", email = "samnnazarov@gmail.com"}
 ]
-license = {text = "Apache-2.0"}
 readme = "README.md"
-requires-python = "~3.10"
+requires-python = ">=3.10,<3.11"
 dependencies = [
-    "setuptools (>=80.9.0,<81.0.0)",
     "django (>=5.2.4,<6.0.0)",
     "django-cors-headers (>=4.7.0,<5.0.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
-    "djangorestframework (>=3.16.0,<4.0.0)",
     "gunicorn[gevent] (>=23.0.0,<24.0.0)",
-    "django-enum (>=2.2.3,<3.0.0)"
+    "django-enum (>=2.2.3,<3.0.0)",
+    "uvicorn (>=0.35.0,<0.36.0)",
+    "uvicorn-worker (>=0.3.0,<0.4.0)",
+    "channels (>=4.3.0,<5.0.0)",
+    "django-ninja (>=1.4.3,<2.0.0)",
+    "orjson (>=3.11.1,<4.0.0)",
+    "uvloop (>=0.21.0,<0.22.0) ; sys_platform == 'linux'",  # environment markers PEP-508
 ]
 
 [project.optional-dependencies]
 postgres = [
-    'psycopg2-binary'
+    "psycopg2-binary"  # poetry install --no-root --extras postgres
+]
+common = [
+    "common @ ../../common"  # poetry install --no-root --extras common
 ]
 
 [tool.poetry]
 packages = [
-    {include = "repo", from = "../"}
+    {include = "common", from = "../../common/src"},  # poetry install --only-root (for dev install in editable mode without deps)
 ]
 
 [build-system]
