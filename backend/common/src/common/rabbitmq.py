@@ -14,13 +14,17 @@ from typing import Any, Awaitable, Callable, Optional, Union
 
 from .utils import is_async, lock, record, repeat, singleton
 
-__all__ = ['ARabbitMQService', 'consume_callback', 'parse_settings']
+__all__ = ['ARabbitMQService', 'CancelAcknowledge', 'consume_callback', 'parse_settings']
 
 logging.basicConfig(level=logging.INFO)
 
 CONNECTION_EXCEPTIONS = (AttributeError, *exceptions.CONNECTION_EXCEPTIONS)
 DEFAULT_TIMEOUT = 10.0
 LOGGER = logging.getLogger(__name__)
+
+
+class CancelAcknowledge(Exception):
+    pass
 
 
 def parse_settings(settings):
@@ -115,28 +119,32 @@ class consume_callback:
 
                     messages.append(msg.message_id)
 
+                is_success = True
                 try:
-                    await fn(msg, *args, **kwargs)
+                    return await fn(msg, *args, **kwargs)
+                except CancelAcknowledge:
+                    is_success = False
                 except Exception as e:
-                    LOGGER.error(e)
+                    LOGGER.error(e, exc_info=True)
+                    is_success = False
                     raise
+                finally:
+                    if is_success and self.ack:
+                        info = _get_acknowledge_info(msg)
+                        if not info["is_ack"]:
+                            return
 
-                if self.ack:
-                    info = _get_acknowledge_info(msg)
-                    if not info["is_ack"]:
-                        return
-
-                    if info["count"] > 1:
-                        info["count"] -= 1
-                    elif info["count"] == 1:
-                        try:
-                            await msg.ack()
-                        except Exception as e:
-                            LOGGER.error(e, exc_info=True)
-                        else:
-                            LOGGER.info(f"Message {msg.message_id} acknowledged.")
-                        finally:
-                            _clear_acknowledge_info(msg)
+                        if info["count"] > 1:
+                            info["count"] -= 1
+                        elif info["count"] == 1:
+                            try:
+                                await msg.ack()
+                            except Exception as e:
+                                LOGGER.error(e, exc_info=True)
+                            else:
+                                LOGGER.info(f"Message {msg.message_id} acknowledged.")
+                            finally:
+                                _clear_acknowledge_info(msg)
         else:
             raise TypeError("Consume callback must be async.")
 
