@@ -72,7 +72,7 @@ services:
     volumes:
       - auth_db_data:${PGDATA}
 
-  # docker build -t cloudgit-auth --build-context common=./backend/common  backend/services/auth
+  # docker build -t cloudgit-repo --build-context common=./backend/common  backend/services/repo
   repo:
     restart: always
     image: cloudgit-repo:latest
@@ -110,12 +110,14 @@ services:
       python ./manage.py migrate &&
       python ./run.py"
     depends_on:
-      auth_db:
+      repo_db:
         condition: service_healthy
         restart: true
       rabbitmq:
         condition: service_started
         restart: true
+    volumes:
+      - repo_data:~/.storage/data
 
   repo_db:
     restart: always
@@ -199,6 +201,7 @@ services:
         AUTH_PORT: ${AUTH_PORT}
         FRONTEND_PORT: ${FRONTEND_PORT}
         RABBITMQ_NODE_PORT: ${RABBITMQ_NODE_PORT}
+        REPO_PORT: ${REPO_PORT}
     container_name: nginx
     user: "1011:1001"
     env_file:
@@ -211,8 +214,10 @@ services:
       - rabbitmq
       - frontend
       - auth
+      - repo
 
 volumes:
   auth_db_data:
+  repo_data:
   repo_db_data:
   rabbitmq_data:
