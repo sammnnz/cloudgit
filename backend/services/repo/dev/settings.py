@@ -89,6 +89,32 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware'
 ]
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        'repo': {
+               'handlers': ['console'],
+               'level': 'INFO',
+               'propagate': False,
+        },
+    },
+}
+
 RABBITMQ = {
     'host': os.getenv('DJANGO_RABBITMQ_HOST'),
     'port': os.getenv('DJANGO_RABBITMQ_PORT'),
