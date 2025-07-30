@@ -1,18 +1,60 @@
-# This is an auto-generated Django model module.
-# You'll have to do the following manually to clean this up:
-#   * Rearrange models' order
-#   * Make sure each model has one field with primary_key=True
-#   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
-#   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
-# Feel free to rename the models, but don't rename db_table values or field names.
-from django.db import models
+import logging
+
+from aio_pika.abc import AbstractIncomingMessage
+from common.rabbitmq import consume_callback, CancelAcknowledge
+from common.utils import bytes_to_json
+from django.db import models, IntegrityError
+from django.utils.translation import gettext_lazy as _
 # https://pypi.org/project/django-enum/
 from django_enum import EnumField
+from .managers import AuthUserExternalManager, StorageManager
+
+LOGGER = logging.getLogger('repo')
+
+
+@consume_callback(queues=['to_repo'], ack=True)
+async def _on_change_user(msg: AbstractIncomingMessage):
+    """
+    Note:
+        If raise IntegrityError in 'acreate' or 'adelete', then incomming message is acknowledged.
+        It means, that this callback don't apply force changes.
+    """
+    data: dict = bytes_to_json(msg.body)
+    if not data.get('service', '').startswith('auth'):
+        raise CancelAcknowledge
+
+    if not data.get('table', '').endswith('user'):
+        raise CancelAcknowledge
+
+    _id = data.get('id', None)
+    if not _id:
+        raise CancelAcknowledge
+
+    username = data.get('info', {}).get('username', None)
+    if not username:
+        raise CancelAcknowledge
+
+    action = data.get('action', '')
+    fn = getattr(AuthUserExternal.objects, 'a' + action + '_user', None)
+    if fn is None:
+        raise CancelAcknowledge
+
+    try:
+        await fn(**{"_id": _id, "username": username})
+    except IntegrityError:
+        LOGGER.warning(f"Failed on {action} of user '{username}', "
+                       f"but incoming message is acknowledged.")
+        return None
+
+    LOGGER.info(f"Success {action} of user '{username}'.")
 
 
 class AuthUserExternal(models.Model):
-    id = models.AutoField(primary_key=True)
-    user_id = models.IntegerField()
+    id = models.AutoField(_("id"), primary_key=True)
+    user_id = models.IntegerField(_("user id"), unique=True, blank=False)
+    username = models.CharField(_("username"), max_length=150, blank=False)
+
+    objects = AuthUserExternalManager()
 
     class Meta:
         db_table = 'auth_user_external'
@@ -73,7 +115,9 @@ class Repo(models.Model):
 
 class Storage(models.Model):
     id = models.BigAutoField(primary_key=True)
-    link = models.CharField(max_length=255)
+    link = models.CharField(max_length=255, blank=False)
+
+    objects = StorageManager()
 
     class Meta:
         db_table = 'storage'
