@@ -1,4 +1,5 @@
 from common.rabbitmq import ARabbitMQService
+from common.schema import RabbitSchema
 from common.utils import json_to_bytes
 from django.contrib.auth import aauthenticate, alogin, alogout
 from django.contrib.auth.decorators import login_required
@@ -8,7 +9,7 @@ from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from ninja import Router
 from .models import User
-from .schema import SessionInfoOut, SessionLoginIn, UserOutSchema, RabbitSchema, UserInSchema
+from .schema import SessionInfoOut, SessionLoginIn, UserOutSchema, UserInSchema
 
 rabbit = ARabbitMQService()
 router = Router()
@@ -65,7 +66,7 @@ async def user_create(request, data: UserInSchema):
     except IntegrityError:
         return 422, f"User with username '{data.username}' or email '{data.email}' already exists."
 
-    msg = RabbitSchema.from_orm(new_user, action="create").model_dump()
+    msg = RabbitSchema.create(new_user, info={"username": data.username}).model_dump()
     await rabbit.send(queues=['to_repo'], message=json_to_bytes(msg))
     return 204, None
 
@@ -74,7 +75,7 @@ async def user_create(request, data: UserInSchema):
 @login_required
 async def user_delete(request):
     user = await getattr(request, "auser")()
-    msg = RabbitSchema.from_orm(user, action="delete").model_dump()
+    msg = RabbitSchema.delete(user, info={"username": user.username}).model_dump()
     await user.adelete()
     await rabbit.send(queues=['to_repo'], message=json_to_bytes(msg))
     return 204, None
