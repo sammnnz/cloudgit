@@ -11,22 +11,6 @@ from .models import User
 username_validator = UnicodeUsernameValidator()
 
 
-class RabbitSchema(Schema):
-    action: str
-    id: int
-    service: str
-    table: str
-
-    @classmethod
-    def from_orm(cls, obj: User, action: str = "") -> "RabbitSchema":
-        return cls(
-            action=action,
-            id=obj.pk,
-            service="auth",
-            table=obj._meta.db_table
-        )
-
-
 class SessionInfoOut(Schema):
     id: Optional[int] = None  # user ID
     is_authenticated: bool = False
