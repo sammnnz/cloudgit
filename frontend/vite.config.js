@@ -16,7 +16,14 @@ export default defineConfig({
     server: {
         port: 3000,
         host: '127.0.0.1',
-        hmr: true,
+        // https://vite.dev/config/server-options.html#server-hmr
+        hmr: {
+            clientPort: 3000
+        },
+        strictPort: true,
+        allowedHosts: [
+            'frontend'
+        ]
     },
     build: {
         outDir: "build",
