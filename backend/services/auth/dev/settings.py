@@ -37,7 +37,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    os.getenv('REMOTE_SERVER_URL')
+    os.getenv('REMOTE_SERVER_URL'),
 ]
 
 CORS_EXPOSE_HEADERS = [

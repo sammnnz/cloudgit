@@ -1,5 +1,5 @@
 from common.rabbitmq import ARabbitMQService
-from common.schema import RabbitSchema
+from common.schemas import RabbitSchema
 from common.utils import json_to_bytes
 from django.contrib.auth import aauthenticate, alogin, alogout
 from django.contrib.auth.decorators import login_required
@@ -9,7 +9,7 @@ from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from ninja import Router
 from .models import User
-from .schema import SessionInfoOut, SessionLoginIn, UserOutSchema, UserInSchema
+from .schemas import SessionInfoOut, SessionLoginIn, UserOutSchema, UserInSchema
 
 rabbit = ARabbitMQService()
 router = Router()
@@ -41,15 +41,16 @@ async def session_login(request, data: SessionLoginIn):
     return 204, None
 
 
-@router.get('/session/logout/', response={204: None})
+@router.get('/session/logout/', response={200: None})
 @login_required
 async def session_logout(request):
     await alogout(request)
-    return 204, None
+    return 200, None
 
 
 @router.get('/user/check', response={200: bool})
 async def user_check(request, username: str):
+    """ Return True if user exists. Else return False. """
     user = await User.objects.aget_safe(username=username)
     if user is not None:
         return 200, True
@@ -71,17 +72,21 @@ async def user_create(request, data: UserInSchema):
     return 204, None
 
 
-@router.post('/user/delete/', response={204: None, 422: str})
+@router.post('/user/delete/', response={200: None, 422: str})
 @login_required
 async def user_delete(request):
     user = await getattr(request, "auser")()
     msg = RabbitSchema.delete(user, info={"username": user.username}).model_dump()
     await user.adelete()
     await rabbit.send(queues=['to_repo'], message=json_to_bytes(msg))
-    return 204, None
+    return 200, None
 
 
-@router.get('/user/info/', response=UserOutSchema)
-@login_required
-def user_info(request):
-    return request.user
+@router.get('/user/info', response={200: UserOutSchema, 404: str})
+async def user_info(request, username: str):
+    user = await User.objects.aget_safe(username=username)
+    print(user)
+    if user is not None:
+        return 200, user
+
+    return 404, "User not found."
