@@ -20,6 +20,7 @@ dependencies = [
     "django-ninja (>=1.4.3,<2.0.0)",
     "orjson (>=3.11.1,<4.0.0)",
     "uvloop (>=0.21.0,<0.22.0) ; sys_platform == 'linux'",  # environment markers PEP-508
+    "aiohttp (>=3.12.15,<4.0.0)",
 ]
 
 [project.optional-dependencies]

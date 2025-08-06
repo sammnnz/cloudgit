@@ -20,6 +20,10 @@ DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = []
 
+SERVICES = {
+    'auth': os.getenv('REMOTE_SERVER_URL') + '/api/auth'
+}
+
 # CORS
 CORS_ALLOW_CREDENTIALS = True
 
@@ -120,6 +124,14 @@ RABBITMQ = {
 }
 
 ROOT_URLCONF = 'urls'
+
+STORAGE = {
+    'default': {
+        'link': None,
+        'path': os.getenv('STORAGE_LOCAL_PATH'),
+        'type': 'local',
+    },
+}
 
 TEMPLATES = [
     {
