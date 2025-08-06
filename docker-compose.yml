@@ -1,6 +1,9 @@
 #https://docs.docker.com/reference/compose-file/version-and-name/#version-top-level-element-obsolete
 networks:
   cloudgit:
+    # https://stackoverflow.com/questions/70307460/error-in-docker-network-path-declared-as-external-but-could-not-be-found
+  dev_external:
+    external: true
 
 services:
   # docker build -t cloudgit-auth --build-context common=./backend/common  backend/services/auth
@@ -117,7 +120,7 @@ services:
         condition: service_started
         restart: true
     volumes:
-      - repo_data:~/.storage/data
+      - repo_data:${STORAGE_LOCAL_PATH}
 
   repo_db:
     restart: always
@@ -167,7 +170,7 @@ services:
       context: ./frontend
       args:
         VITE_DEBUG: ${DEBUG}
-        VITE_BACKEND_URL: ${SCHEME}://${NGINX_EXT_HOST}
+        VITE_REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}
     env_file:
       - ./.env
     container_name: frontend
@@ -215,6 +218,19 @@ services:
       - frontend
       - auth
       - repo
+
+  nginx-dev:
+    image: nginx:1.29.0-alpine-slim
+    container_name: nginx-dev
+    ports:
+      - "127.0.0.1:80:80"
+    volumes:
+      - ./nginx/proxy_params:/etc/nginx/proxy_params
+      - ./nginx/dev/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - rabbitmq
+      - auth_db
+      - repo_db
 
 volumes:
   auth_db_data:
