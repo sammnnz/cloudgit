@@ -89,10 +89,10 @@ const getStyleSheets = (tables = [], pure = true) => {
     return styleSheets;
 }
 
-export const ShadowRoot = ({ children, onload, linkstyles, stylesheets }) => {
+export const ShadowRoot = ({ children, onload, nopureStyles, pureStyles, stylesheets }) => {
     const img = useRef(null);
 
-    const postLoad = (...args) => {
+    const afterLoad = (...args) => {
         const params = [...args];
         if (img.current) {
             params.push(img.current.parentNode);
@@ -103,18 +103,23 @@ export const ShadowRoot = ({ children, onload, linkstyles, stylesheets }) => {
             onload(...params);
     }
 
-    if (! (linkstyles instanceof Array)) linkstyles = [];
+    if (! (nopureStyles instanceof Array)) nopureStyles = [];
+    if (! (pureStyles instanceof Array)) pureStyles = [];
 
     const { constructableStylesheetsSupported } = ReactShadowRoot;
     if (! (stylesheets instanceof Array)) stylesheets = [];
 
-    const styleSheets = [...getStyleSheets(linkstyles, true), ...stylesheets]
+    const styleSheets = [
+        ...getStyleSheets(nopureStyles, false),
+        ...getStyleSheets(pureStyles, true),
+        ...stylesheets
+    ];
     return (
         <div className={defaults["shadow-root"] + " shadow-root"}>
             <ReactShadowRoot mode={'open'} stylesheets={
                 constructableStylesheetsSupported ? styleSheets : []}>
                 {children}
-                <img ref={img} alt="" src=" " onError={postLoad} style={{ display: "none" }}/>
+                <img ref={img} alt="" src=" " onError={afterLoad} style={{ display: "none" }}/>
             </ReactShadowRoot>
         </div>
     );
