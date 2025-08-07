@@ -1,0 +1,61 @@
+.container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+}
+
+.form{
+    display: flex;
+    flex-direction: column;
+    /*width: 350px;*/
+    /*height: 120px;*/
+    border: 2px solid black;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    width: 400px;
+}
+
+.content-1{
+    display: flex;
+    width: inherit;
+    justify-content: center;
+}
+
+.reponame-content{
+    /*width: 50%;*/
+    display: flex;
+    justify-content: end;
+    align-items: center;
+}
+
+.repoaccess-content{
+    /*width: 50%;*/
+    display: flex;
+    align-items: center;
+    color: #ffffff;
+    font-size: 10px;
+}
+
+.access-label{
+    background: var(--color-base-accent);
+    width: fit-content;
+    height: fit-content;
+    border-radius: 1em;
+    padding: 4px 8px;
+    color: #ffffff;
+}
+
+.access-label:hover{
+    background: var(--color-base-accent-dark);
+}
+
+.create-btn{
+    margin-top: 36px;
+}
+
+.content-2{
+    padding-top: 12px;
+}

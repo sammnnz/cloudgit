@@ -1,0 +1,49 @@
+.input,
+.input-buffer{
+    font-size: 14px;
+    background: none;
+}
+
+.input{
+    border: 0;
+    width: 18px;
+    min-width: 12px;
+    padding: 0;
+}
+
+.input-lock{
+    width: auto !important;
+    margin-right: 18px !important;
+}
+
+.input:focus{
+    outline: 0;
+}
+
+.input-buffer{
+    position: absolute;
+    top: -1000px;
+    left: -1000px;
+    visibility: hidden;
+    white-space: nowrap;
+}
+
+.cursor:before {
+    content: '';
+    display: none;
+    position: absolute;
+    width: 0.1px;
+    height: 16px;
+    background: #000000;
+    opacity: 1;
+    z-index: 3;
+}
+
+.input:not(:focus) + .cursor:before {
+  display: inline-block;
+  animation: cursor 1s infinite step-end;
+}
+
+@keyframes cursor {
+  50% { background: transparent; }
+}
