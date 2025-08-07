@@ -1,0 +1,13 @@
+.navbar{
+    background: #ffffff !important;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 1) 20%, var(--color-base-accent) 100%) !important;
+}
+
+.button{
+    font-size: 12px;
+}
+
+.button-base:hover{
+    border: 1px solid #ffffff !important;
+    color: #ffffff !important;
+}
