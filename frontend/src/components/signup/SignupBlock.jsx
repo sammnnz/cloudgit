@@ -139,7 +139,7 @@ const SignupBlock = () => {
         if (200 <= status && status < 300) {
             response = await postSessionLogin(username.value, password.value);
             if (200 <= status && status < 300) {
-                window.location.href = "/dashboard";
+                window.history.back();
                 return;
             }
 
@@ -162,8 +162,7 @@ const SignupBlock = () => {
     }
 
     return (
-        <ShadowRoot onload={onShadowRootLoad} linkstyles={[signupCSS]}>
-            {/*<link rel="stylesheet" href="./src/styles/signup.css"/>*/}
+        <ShadowRoot onload={onShadowRootLoad} pureStyles={[signupCSS]}>
             <div className="signup-block">
                 <div className="container">
                     <div className="content">
