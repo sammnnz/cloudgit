@@ -20,7 +20,7 @@ export const convertResponseData = (response) => {
 
     if (typeof response.data === "object") {
         const detail = response.data.detail;
-        if (detail instanceof String)
+        if (typeof detail === "string")
             return detail
 
         if (detail instanceof Array && detail.length && typeof detail[0] === "object")
@@ -59,6 +59,30 @@ export const lazyLoad = (factory) => () => {
       <Component />
     </Suspense>
   );
+}
+
+export const parsePathName = (start = "", index = 0) => {
+    if (typeof start !== "string")
+        start = ""
+
+    start = start.trim()
+    if (typeof index !== "number")
+        index = 0;
+
+    let path = window.location.pathname.split("/"),
+        afterIndex = 0;
+    for (let i in path) {
+        const p = path[i].trim()
+        if (p !== start && !afterIndex)
+            continue;
+
+        if (index < 0 && !afterIndex)
+            index = path.length + index - i;
+
+        if (index === afterIndex)
+            return p;
+        afterIndex += 1
+    }
 }
 
 export const postRequest = async (url, data, options = {}) => {
