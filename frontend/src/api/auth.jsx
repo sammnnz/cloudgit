@@ -1,7 +1,8 @@
 import { convertResponse, getRequest, postRequest } from "@/common/utils";
-import { BACKEND_URL } from "@/common/constants";
+import { REMOTE_SERVER_URL } from "@/common/constants";
 
-export const url = BACKEND_URL + '/api/auth/';
+export const url = REMOTE_SERVER_URL + '/api/auth/';
+
 export const getCSRFToken = async () => {
     const response = await getRequest(url + 'session/csrf/', {
         withCredentials: true
@@ -17,8 +18,14 @@ export const getCSRFToken = async () => {
 
 export const getSessionInfo = async (options = {}) => {
     Object.assign(options, {withCredentials: true});
-    const response = await getRequest(url + 'session/info/', options);
-    return convertResponse(response);
+    const response = await getRequest(url + 'session/info/', options),
+        result = {
+            'id': undefined,
+            'is_authenticated': false,
+            'username': undefined
+    };
+    Object.assign(result, convertResponse(response)?.data)
+    return result;
 }
 
 export const getSessionLogout = async () => {
@@ -28,20 +35,23 @@ export const getSessionLogout = async () => {
     return convertResponse(response);
 }
 
+/**
+ * Return True if user exists, False if not exists and undefined when server failed.
+ */
 export const getUserCheck = async (username) => {
-    const response = await getRequest(url + `user/check?username=${username}`, {
+    let response = await getRequest(url + `user/check?username=${username}`, {
         withCredentials: true,
     });
-    return convertResponse(response);
-}
-
-export const isUserExists = async (username) => {
-    const response = await getUserCheck(username);
+    response = convertResponse(response);
     if (+response?.status >= 300 && +response?.status < 200) {
         return;
     }
 
     return !!response?.data;
+}
+
+export const isUserExists = async (username) => {
+    return await getUserCheck(username);
 }
 
 export const postSessionLogin = async (username, password) => {
