@@ -2,15 +2,20 @@
 import asyncio
 import functools
 import logging
-from collections.abc import Callable
 
+from collections.abc import Callable
+from functools import lru_cache
 from inspect import CO_ASYNC_GENERATOR, CO_COROUTINE, CO_GENERATOR
 from json import dumps, loads
+from pathlib import Path
 from types import FunctionType, MethodType, NoneType
-from typing import Any, Coroutine
+from typing import Any, Coroutine, Optional
 
 __all__ = [
     "bytes_to_json",
+    "check_path",
+    "check_storage",
+    "get_storage",
     "is_async",
     "is_async_generator",
     "is_generator",
@@ -145,6 +150,50 @@ def bytes_to_json(b: bytes, codec: str = 'utf-8') -> dict:
         raise TypeError(f"'{b}' must be a bytes.")
 
     return loads(b.decode(codec))
+
+
+def check_path(path: Optional[str]) -> bool:
+    try:
+        Path(path)
+    except (ValueError, TypeError):
+        return False
+
+    return True
+
+
+def check_storage(o: Any):
+    if not isinstance(o, dict):
+        raise TypeError("Settings has no valid 'STORAGES' object.")
+
+    if not isinstance(o.get('ssh', None), dict):
+        raise TypeError('ssh must be a dict')
+
+    ssh = o.get('ssh', None)
+    try:
+        ssh['host']; ssh['port']; ssh['username'];
+    except KeyError:
+        raise TypeError('ssh must be a dict with keys "host", "port" and "username"')
+
+    if not check_path(o.get('path', None)):
+        raise TypeError("invalid path")
+
+    size = o.get('size', None)
+    if not isinstance(size, (int, float)):
+        raise TypeError('size must be a number')
+
+    if size < 0:
+        raise TypeError('size must be a positive number')
+
+
+@lru_cache
+def get_storage(settings, name: str):
+    storages = getattr(settings, 'STORAGES', {})
+    if not isinstance(storages, dict):
+        raise TypeError("'STORAGES' must be a dictionary.")
+
+    o = storages.get(name, None)
+    check_storage(o)
+    return o
 
 
 def is_async(fn):
