@@ -55,6 +55,14 @@ class RepoCreateInSchema(Schema):
     access: AccessLiteral = ...
     description: str = "no description"
 
+    @field_validator('access', check_fields=False, mode='after')
+    @classmethod
+    def validate_access(cls, value):
+        if value:
+            value = getattr(RepoAccessEnum, value.upper()).value
+
+        return value
+
     @field_validator('description', check_fields=False, mode='before')
     @classmethod
     def validate_description(cls, value):

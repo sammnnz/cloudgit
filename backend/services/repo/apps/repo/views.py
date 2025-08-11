@@ -1,16 +1,14 @@
-from typing import Union, List
-
 import aiohttp
+
 from asgiref.sync import sync_to_async
+from common.rabbitmq import ARabbitMQService
 from django.core.exceptions import SynchronousOnlyOperation
 from django.db import IntegrityError
-
-from common.rabbitmq import ARabbitMQService
-from common.utils import json_to_bytes
 from ninja import Router
-from .models import AuthUserExternal, Storage, Repo
+from typing import List
+from .models import Storage
 from .schemas import *
-from .utils import get_service_url, get_storage
+from .utils import get_service_url
 
 rabbit = ARabbitMQService()
 router = Router()
@@ -44,18 +42,16 @@ async def repo_create(request, data: RepoCreateInSchema):
                 _data = await response.json()
                 user = await AuthUserExternal.objects.acreate_user(user_id=_data["id"], username=_data["username"])
 
-    storage = await Storage.objects.aget_safe(name='default')
+    storage = await Storage.objects.aget_safe(name='storage-1')
     if storage is None:
-        storage = await Storage.objects.acreate_storage(**get_storage(name='default'))
+        storage = await Storage.objects.acreate_storage('storage-1')
 
     try:
-        await Repo.objects.acreate_repo(user_id=user.pk,
-                                        storage_id=storage.pk,
-                                        storage_path=storage.path,
+        await Repo.objects.acreate_repo(user=user,
+                                        storage=storage,
                                         repo_name=data.reponame,
                                         access=data.access,
-                                        description=data.description,
-                                        path="/")
+                                        description=data.description)
     except IntegrityError:
         return 422, f"Repository '{data.reponame}' already exists."
 
