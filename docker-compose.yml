@@ -84,7 +84,7 @@ services:
       - no-new-privileges
     cap_drop:
       - ALL
-    user: "1002:1001"
+    user: "1001:1001"
     networks:
       - cloudgit
     ports:
@@ -119,8 +119,6 @@ services:
       rabbitmq:
         condition: service_started
         restart: true
-    volumes:
-      - repo_data:${STORAGE_LOCAL_PATH}
 
   repo_db:
     restart: always
@@ -196,6 +194,33 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  storage_1:
+    restart: always
+    build:
+      context: ./storages/storage-1
+      args:
+        STORAGE_PATH: ${STORAGE_1_PATH}
+        USERNAME: ${CLOUDGIT_USER}
+        PASSWORD: ${CLOUDGIT_PASSWORD}
+    container_name: storage_1
+    user: "1001:1001"
+    networks:
+      - cloudgit
+    env_file:
+      - ./.env
+    environment:
+      CLOUDGIT_STORAGE_NAME: ${STORAGE_1_NAME}
+      STORAGE_1_CLIENT_KEY_PATH: ~/.ssh/${STORAGE_1_NAME}
+    ports:
+      - "127.0.0.1:2222:22"
+    command: >
+      sh -c "
+      cat ${STORAGE_1_CLIENT_KEY_PATH}.pub >> ~/.ssh/authorized_keys &&
+      sudo /usr/sbin/sshd -D"
+    volumes:
+      - storage_1_data:${STORAGE_1_PATH}
+      - ${STORAGE_1_CLIENT_KEY_PATH}.pub:/home/${CLOUDGIT_USER}/.ssh/${STORAGE_1_NAME}.pub
+
   nginx:
     restart: always
     build:
@@ -206,7 +231,7 @@ services:
         RABBITMQ_NODE_PORT: ${RABBITMQ_NODE_PORT}
         REPO_PORT: ${REPO_PORT}
     container_name: nginx
-    user: "1011:1001"
+    user: "1001:1001"
     env_file:
       - ./.env
     ports:
@@ -231,9 +256,10 @@ services:
       - rabbitmq
       - auth_db
       - repo_db
+      - storage_1
 
 volumes:
   auth_db_data:
-  repo_data:
   repo_db_data:
   rabbitmq_data:
+  storage_1_data:
