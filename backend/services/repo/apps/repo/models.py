@@ -1,14 +1,16 @@
 import logging
 
 from aio_pika.abc import AbstractIncomingMessage
+from django.db.models import F, Value, Func
+from django.db.models.functions import Concat
+
 from common.rabbitmq import consume_callback, CancelAcknowledge
 from common.utils import bytes_to_json
 from django.db import models, IntegrityError
 from django.utils.translation import gettext_lazy as _
 # https://pypi.org/project/django-enum/
 from django_enum import EnumField
-from .managers import (AuthUserExternalManager, MaitainerAccessEnum, RepoAccessEnum, RepoManager, StorageManager,
-                       StorageTypeEnum)
+from .managers import AuthUserExternalManager, MaitainerAccessEnum, RepoAccessEnum, RepoManager, StorageManager
 
 LOGGER = logging.getLogger('repo')
 
@@ -107,7 +109,7 @@ class Repo(models.Model):
     )
     access = EnumField(RepoAccessEnum, db_index=True, db_comment='values: private, public')
     description = models.CharField(_("repo description"), blank=False, max_length=50)
-    path = models.CharField(max_length=255, blank=False, db_comment='path into storage')
+    path = models.CharField(_("repo path into storage"), blank=False, max_length=255)
 
     objects = RepoManager()
 
@@ -129,34 +131,25 @@ class Storage(models.Model):
             'max_length': _("Storage name must be less than 32 characters."),
         }
     )
-    link = models.CharField(
-        _("storage link"),
-        max_length=255,
+    general_size = models.PositiveIntegerField(
+        _("Storage size in KB."),
         blank=False,
-        null=True,
-        help_text=_(
-            "Required. Link to remote storage. If storage is local, then set null."
-        ),
-        error_messages={
-            'max_length': _("Storage link must be less than 255 characters."),
-        }
     )
-    type = EnumField(
-        StorageTypeEnum,
-        verbose_name=_("storage type"),
+    used_size = models.PositiveIntegerField(
+        _("Storage used size in KB."),
         blank=False,
-        db_comment='values: local, remote',
-        help_text=_("Required. Type of repo may be 'local' or 'remote'.'")
     )
-    path = models.CharField(
-        _("storage path"),
-        max_length=255,
-        blank=False,
-        help_text=_("Required. Path into storage server."),
-        error_messages={
-            'max_length': _("Path must be less than 255 characters."),
-        }
+    available_size = models.GeneratedField(
+        expression=F("general_size") - F("used_size"),
+        output_field=models.PositiveIntegerField(),
+        db_persist=True,  # for postgres
+        db_comment="If < 500mb, then storage will not be available for creating new repositories."
     )
+    path = models.CharField(max_length=255, blank=False)
+    ssh_host = models.CharField(max_length=128, blank=False)
+    ssh_port = models.IntegerField(blank=True, null=True)
+    ssh_username = models.CharField(max_length=32, blank=False)
+    # ssh_password = models.CharField(max_length=128, blank=False)
 
     objects = StorageManager()
 
