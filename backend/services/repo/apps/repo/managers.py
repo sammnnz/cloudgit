@@ -1,11 +1,15 @@
 import os
 
 from common.managers import BaseManager
+from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
-from pathlib import Path
-from types import NoneType
-from typing import Literal, Optional
+from typing import Literal, Optional, TypeVar
+from common.utils import get_storage, check_storage, check_path
+from common.ssh import ssh_exec, ssh_parse_output
+
+Storage = TypeVar('Storage', 'StorageManager', models.Model)
+User = TypeVar('User', 'AuthUserExternalManager', models.Model)
 
 
 class AuthUserExternalManager(BaseManager):
@@ -57,56 +61,66 @@ class RepoManager(BaseManager):
     async def _acreate_repo(self,
                             user_id: int,
                             storage_id: int,
-                            storage_path: str,
                             repo_name: str,
-                            access: Literal['private', 'public'],
+                            access: Literal['PR', 'PU'],
                             description: str,
                             path: str,
                             **kwargs):
-        path = os.path.join(storage_path, path)
-        repo = self.model(user_id=user_id, storage_id=storage_id,
-                          repo_name=repo_name, access=access,
-                          description=description, path=path)
+        repo = self.model(user_id=user_id, storage_id=storage_id, repo_name=repo_name,
+                          access=access, description=description, path=path)
         await repo.asave(using=self._db)
         return repo
 
+    @staticmethod
+    async def _acreate_repo_folder(path: str):
+        commands = [
+            f"mkdir -p {path}",
+            f"cd {path}",
+            "git init"
+        ]
+        run = await ssh_exec(commands)
+        ssh_parse_output(run, commands)
+
+    @staticmethod
+    async def _adelete_repo_folder(path: str):
+        commands = [f"rm {path}"]
+        run = await ssh_exec(commands)
+        ssh_parse_output(run, commands)
+
     async def acreate_repo(self,
-                           user_id: int,
-                           storage_id: int,
-                           storage_path: str,
+                           user: User,
+                           storage: Storage,
                            repo_name: str,
-                           access: Literal['private', 'public'],
+                           access: Literal['PR', 'PU'],
                            description: str,
-                           path: str,
                            **kwargs):
-        if not isinstance(user_id, int):
-            raise TypeError("'user_id' must be an integer.")
-
-        if not isinstance(storage_id, int):
-            raise TypeError("'storage_id' must be an integer.")
-
-        try:
-            Path(storage_path)
-        except (ValueError, OSError):
-            raise TypeError("'storage_path' must be a path.")
-
         if not isinstance(repo_name, str) and repo_name == "":
             raise TypeError("'repo_name' must be not empty string.")
 
-        if access not in ('private', 'public'):
+        try:
+            RepoAccessEnum(access)
+        except ValueError:
             raise ValueError("'access' must be 'private' or 'public'.")
 
         if not isinstance(description, str):
             raise TypeError("'description' must be a string.")
 
-        try:
-            Path(path)
-        except (ValueError, OSError):
-            raise TypeError("'path' must be a path.")
+        path = storage.path + '/' + user.username + '/' + repo_name
+        if not check_path(path):
+            raise TypeError("'path' is not valid.")
 
-        return await self._acreate_repo(user_id, storage_id, storage_path,
-                                        repo_name, getattr(RepoAccessEnum, access.upper()),
-                                        description, path, **kwargs)
+        await self._acreate_repo_folder(path=path)
+        try:
+            return await self._acreate_repo(user.pk,
+                                            storage.pk,
+                                            repo_name,
+                                            access,
+                                            description,
+                                            path,
+                                            ** kwargs)
+        except Exception as e:
+            await self._adelete_repo_folder(path=path)
+            raise e
 
 
 class StorageTypeEnum(models.TextChoices):
@@ -119,34 +133,55 @@ class StorageManager(BaseManager):
 
     async def _acreate_storage(self,
                                name: str,
-                               link: Optional[str],
-                               type: Literal['local', 'remote'],
-                               path: Optional[str], **kwargs):
-        storage = self.model(name=name, link=link, type=type, path=path)
+                               **kwargs):
+        try:
+            storage_info = get_storage(settings, name)
+        except TypeError:
+            storage_info = None
+
+        if storage_info is None:
+            try:
+                check_storage(kwargs.get('storage', None))
+            except TypeError:
+                raise TypeError("Has no valid params for connect/create storage.")
+
+        ssh = storage_info['ssh']
+        path = storage_info['path']
+        size = storage_info['size']
+        if size < 500:
+            raise ValueError("'size' must be greater than 500.")
+
+        path = os.path.join(path)
+        commands = [
+            f"mkdir -p {path}",
+            f"cd {path}",
+            "df --out=target --output=avail"
+        ]
+        run = await ssh_exec(commands)
+        ssh_parse_output(run, commands)
+        storage = self.model(name=name,
+                             general_size=size,
+                             used_size=0,
+                             path=path,
+                             ssh_host=ssh['host'],
+                             ssh_port=ssh['port'],
+                             ssh_username=ssh['username'])
         await storage.asave(using=self._db)
         return storage
 
     async def acreate_storage(self,
-                              name: str = 'default',
-                              link: Optional[str] = None,
-                              type: Literal['local', 'remote'] = 'local',
-                              path: Optional[str] = None,
+                              name: str,
+                              *,
+                              raise_on_exists: bool = False,
                               **kwargs):
         if not isinstance(name, str):
             raise TypeError("'name' must be string.")
 
-        if not isinstance(link, (str, NoneType)):
-            raise TypeError("'link' must be string or None.")
+        storage = await self.aget_safe(name=name)
+        if storage is not None:
+            if raise_on_exists:
+                raise MultipleObjectsReturned(f"Storage '{name}' already exists.")
 
-        if type not in ('local', 'remote'):
-            raise TypeError("'type' value must be 'local or 'remote'.")
+            return storage
 
-        if not isinstance(path, str):
-            raise TypeError("'path' must be string.")
-
-        try:
-            Path(path)
-        except (ValueError, OSError):
-            raise TypeError("'path' must be a path.")
-
-        return await self._acreate_storage(name, link, getattr(StorageTypeEnum, type.upper()), path, **kwargs)
+        return await self._acreate_storage(name, **kwargs)
