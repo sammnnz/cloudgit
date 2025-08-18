@@ -1,9 +1,6 @@
 #https://docs.docker.com/reference/compose-file/version-and-name/#version-top-level-element-obsolete
 networks:
   cloudgit:
-    # https://stackoverflow.com/questions/70307460/error-in-docker-network-path-declared-as-external-but-could-not-be-found
-  dev_external:
-    external: true
 
 services:
   # docker build -t cloudgit-auth --build-context common=./backend/common  backend/services/auth
@@ -108,6 +105,10 @@ services:
       GUNICORN_HOST: ${REPO_HOST}
       GUNICORN_PORT: ${REPO_PORT}
       REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}:${NGINX_EXT_PORT}
+      STORAGE_1_CLIENT_KEY_PATH: ~/.ssh/${STORAGE_1_NAME}
+      STORAGE_1_USERNAME: ${CLOUDGIT_USER}
+      STORAGE_2_CLIENT_KEY_PATH: ~/.ssh/${STORAGE_2_NAME}
+      STORAGE_2_USERNAME: ${CLOUDGIT_USER}
     command: >
       sh -c "
       python ./manage.py migrate &&
@@ -197,7 +198,7 @@ services:
   storage_1:
     restart: always
     build:
-      context: ./storages/storage-1
+      context: ./storages/
       args:
         STORAGE_PATH: ${STORAGE_1_PATH}
         USERNAME: ${CLOUDGIT_USER}
@@ -208,18 +209,39 @@ services:
       - cloudgit
     env_file:
       - ./.env
-    environment:
-      CLOUDGIT_STORAGE_NAME: ${STORAGE_1_NAME}
-      STORAGE_1_CLIENT_KEY_PATH: ~/.ssh/${STORAGE_1_NAME}
     ports:
       - "127.0.0.1:2222:22"
     command: >
       sh -c "
-      cat ${STORAGE_1_CLIENT_KEY_PATH}.pub >> ~/.ssh/authorized_keys &&
+      cat ~/.ssh/${STORAGE_1_NAME}.pub >> ~/.ssh/authorized_keys &&
       sudo /usr/sbin/sshd -D"
     volumes:
       - storage_1_data:${STORAGE_1_PATH}
-      - ${STORAGE_1_CLIENT_KEY_PATH}.pub:/home/${CLOUDGIT_USER}/.ssh/${STORAGE_1_NAME}.pub
+      - ~/.ssh/${STORAGE_1_NAME}.pub:/home/${CLOUDGIT_USER}/.ssh/${STORAGE_1_NAME}.pub
+
+  storage_2:
+    restart: always
+    build:
+      context: ./storages/
+      args:
+        STORAGE_PATH: ${STORAGE_2_PATH}
+        USERNAME: ${CLOUDGIT_USER}
+        PASSWORD: ${CLOUDGIT_PASSWORD}
+    container_name: storage_2
+    user: "1001:1001"
+    networks:
+      - cloudgit
+    env_file:
+      - ./.env
+    ports:
+      - "127.0.0.1:2223:22"
+    command: >
+      sh -c "
+      cat ~/.ssh/${STORAGE_2_NAME}.pub > ~/.ssh/authorized_keys &&
+      sudo /usr/sbin/sshd -D"
+    volumes:
+      - storage_2_data:${STORAGE_2_PATH}
+      - ~/.ssh/${STORAGE_2_NAME}.pub:/home/${CLOUDGIT_USER}/.ssh/${STORAGE_2_NAME}.pub
 
   nginx:
     restart: always
@@ -257,9 +279,11 @@ services:
       - auth_db
       - repo_db
       - storage_1
+      - storage_2
 
 volumes:
   auth_db_data:
   repo_db_data:
   rabbitmq_data:
   storage_1_data:
+  storage_2_data:

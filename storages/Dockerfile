@@ -8,6 +8,7 @@ SHELL ["/bin/bash", "-c"]
 RUN apt install git -y
 RUN apt install openssh-server -y
 RUN apt install adduser -y
+RUN apt install jq -y
 RUN apt install sudo -y
 
 ARG STORAGE_PATH
@@ -24,17 +25,25 @@ RUN addgroup --gid 1001 ${USERNAME} && \
     echo "${USERNAME}	ALL=(ALL:ALL) NOPASSWD: /sbin/sshd" >> /etc/sudoers && \
     echo "PasswordAuthentication no" >> /etc/ssh/sshd_config && \
     echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config && \
+    echo "MaxSessions 100" >> /etc/ssh/sshd_config && \
     chmod  0440  /etc/sudoers && \
     echo "${USERNAME}:${PASSWORD}" | chpasswd && \
     mkdir -m 750 -p ${STORAGE_PATH} && \
     chown ${USERNAME}:${USERNAME} ${STORAGE_PATH} && \
     mkdir -m 750 -p /home/${USERNAME}/.ssh && touch /home/${USERNAME}/.ssh/authorized_keys && \
+    chown ${USERNAME}:${USERNAME} /home/${USERNAME}/.ssh/authorized_keys && \
     chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.ssh && \
     mkdir -p /run/sshd
 
 WORKDIR /home/${USERNAME}
 
+COPY --chown=${USERNAME}:${USERNAME} ./utils/gdsjson.sh ./utils/gdsjson.sh
+
+RUN chmod +x ./utils/gdsjson.sh
+
 USER 1001
+
+RUN echo "alias gdsjson='bash ~/utils/gdsjson.sh'" >> ~/.bashrc
 
 CMD ["sudo", "/usr/sbin/sshd", "-D"]
 #CMD ["sleep", "infinity"]

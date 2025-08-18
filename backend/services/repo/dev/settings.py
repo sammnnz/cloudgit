@@ -137,17 +137,27 @@ RABBITMQ = {
 ROOT_URLCONF = 'urls'
 
 STORAGES = {
-    "storage-1": {
+    os.getenv('STORAGE_1_NAME'): {
         'ssh': {
             'host': os.getenv('STORAGE_1_HOST'),
             'port': os.getenv('STORAGE_1_PORT'),
             'username': os.getenv('STORAGE_1_USERNAME'),
-            # 'password': os.getenv('STORAGE_1_PASSWORD'),
             'client_keys': [os.getenv('STORAGE_1_CLIENT_KEY_PATH')],
-            'encryption_algs': '+aes128-cbc,aes256-cbc'
+            'encryption_algs': '+aes128-cbc,aes256-cbc',
+            'known_hosts': None
         },
         'path': os.getenv('STORAGE_1_PATH'),
-        'size': 500000000,
+    },
+    os.getenv('STORAGE_2_NAME'): {
+        'ssh': {
+            'host': os.getenv('STORAGE_2_HOST'),
+            'port': os.getenv('STORAGE_2_PORT'),
+            'username': os.getenv('STORAGE_2_USERNAME'),
+            'client_keys': [os.getenv('STORAGE_2_CLIENT_KEY_PATH')],
+            'encryption_algs': '+aes128-cbc,aes256-cbc',
+            'known_hosts': None
+        },
+        'path': os.getenv('STORAGE_2_PATH'),
     }
 }
 
