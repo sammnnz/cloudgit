@@ -56,3 +56,27 @@ export const postRepoCreate = async (username, reponame, access, description) =>
     });
     return convertResponse(response);
 }
+
+export const postRepoDelete = async (username, reponame) => {
+    const response = await postRequest(url + 'repo/delete/', { username, reponame },
+        {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': await getCSRFToken(),
+        },
+        withCredentials: true,
+    });
+    return convertResponse(response);
+}
+
+export const postRepoDataGet = async (username, reponame, branch = 'main', path) => {
+    const response = await postRequest(url + 'repo/data/get/', { username, reponame, branch, path },
+        {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': await getCSRFToken(),
+        },
+        withCredentials: true,
+    });
+    return convertResponse(response);
+}
