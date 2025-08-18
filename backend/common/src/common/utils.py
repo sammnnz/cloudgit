@@ -4,7 +4,6 @@ import functools
 import logging
 
 from collections.abc import Callable
-from functools import lru_cache
 from inspect import CO_ASYNC_GENERATOR, CO_COROUTINE, CO_GENERATOR
 from json import dumps, loads
 from pathlib import Path
@@ -13,12 +12,12 @@ from typing import Any, Coroutine, Optional
 
 __all__ = [
     "bytes_to_json",
+    "CancelRepeat",
     "check_path",
-    "check_storage",
-    "get_storage",
     "is_async",
     "is_async_generator",
     "is_generator",
+    "is_simple_stroke",
     "json_to_bytes",
     "lock",
     "record",
@@ -63,6 +62,10 @@ class lock:
         return wrapper
 
 
+class CancelRepeat(Exception):
+    pass
+
+
 # noinspection PyPep8Naming
 class repeat:
     __slots__ = ('break_on_success', 'count', 'exceptions', 'fail_on_error', 'logs', 'timeout')
@@ -91,6 +94,8 @@ class repeat:
                 self.count = max(self.count - 1, -1)
                 try:
                     await fn(*args, **kwargs)
+                except CancelRepeat:
+                    break
                 except self.exceptions as e:
                     if self.logs:
                         LOGGER.warning(e, exc_info=True)
@@ -104,6 +109,7 @@ class repeat:
                         break
                 finally:
                     await asyncio.sleep(self.timeout)
+
         return wrapper
 
 
@@ -161,41 +167,6 @@ def check_path(path: Optional[str]) -> bool:
     return True
 
 
-def check_storage(o: Any):
-    if not isinstance(o, dict):
-        raise TypeError("Settings has no valid 'STORAGES' object.")
-
-    if not isinstance(o.get('ssh', None), dict):
-        raise TypeError('ssh must be a dict')
-
-    ssh = o.get('ssh', None)
-    try:
-        ssh['host']; ssh['port']; ssh['username'];
-    except KeyError:
-        raise TypeError('ssh must be a dict with keys "host", "port" and "username"')
-
-    if not check_path(o.get('path', None)):
-        raise TypeError("invalid path")
-
-    size = o.get('size', None)
-    if not isinstance(size, (int, float)):
-        raise TypeError('size must be a number')
-
-    if size < 0:
-        raise TypeError('size must be a positive number')
-
-
-@lru_cache
-def get_storage(settings, name: str):
-    storages = getattr(settings, 'STORAGES', {})
-    if not isinstance(storages, dict):
-        raise TypeError("'STORAGES' must be a dictionary.")
-
-    o = storages.get(name, None)
-    check_storage(o)
-    return o
-
-
 def is_async(fn):
     if not isinstance(fn, (FunctionType, MethodType)):
         return False
@@ -215,6 +186,16 @@ def is_generator(fn):
         return False
 
     return not not fn.__code__.co_flags & CO_GENERATOR
+
+
+def is_simple_stroke(s: str) -> bool:
+    if not isinstance(s, str):
+        return False
+
+    if s.isspace() or not s:
+        return True
+
+    return False
 
 
 def json_to_bytes(o: dict, codec: str = 'utf-8') -> bytes:
