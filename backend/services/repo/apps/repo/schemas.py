@@ -1,8 +1,12 @@
+from pathlib import Path
+
 from ninja import ModelSchema, Schema
 from ninja.errors import HttpError
 # from ninja.schema import S
 from pydantic import field_validator
 from typing import Optional, Literal  # , Type, Any
+
+from common.utils import check_path
 from .managers import RepoAccessEnum
 from .models import AuthUserExternal, Repo
 
@@ -49,6 +53,21 @@ class RepoGetOutSchema(ModelSchema):
         return access
 
 
+class RepoDataGetInSchema(Schema):
+    username: str = ...
+    reponame: str = ...
+    branch: str = ...
+    path: str = ...
+
+    @field_validator('path', check_fields=False, mode='after')
+    @classmethod
+    def validate_path(cls, value):
+        if not check_path(value):
+            raise HttpError(422, f"Invalid path '{value}'.")
+
+        return value
+
+
 class RepoCreateInSchema(Schema):
     username: str = ...
     reponame: str = ...
@@ -80,6 +99,11 @@ class RepoCreateInSchema(Schema):
             raise HttpError(422, "Repository name must be not empty string.")
 
         return value
+
+
+class RepoDeleteInSchema(Schema):
+    username: str = ...
+    reponame: str = ...
 
 
 class StorageSchema(Schema):

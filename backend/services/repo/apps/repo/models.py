@@ -1,15 +1,17 @@
 import logging
 
 from aio_pika.abc import AbstractIncomingMessage
-from django.db.models import F, Value, Func
-from django.db.models.functions import Concat
-
 from common.rabbitmq import consume_callback, CancelAcknowledge
 from common.utils import bytes_to_json
 from django.db import models, IntegrityError
+from django.db.models import F
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 # https://pypi.org/project/django-enum/
 from django_enum import EnumField
+
+from .bash_api import df_avail
 from .managers import AuthUserExternalManager, MaitainerAccessEnum, RepoAccessEnum, RepoManager, StorageManager
 
 LOGGER = logging.getLogger('repo')
@@ -109,13 +111,34 @@ class Repo(models.Model):
     )
     access = EnumField(RepoAccessEnum, db_index=True, db_comment='values: private, public')
     description = models.CharField(_("repo description"), blank=False, max_length=50)
-    path = models.CharField(_("repo path into storage"), blank=False, max_length=255)
+    path = models.CharField(_("repo absolute path into storage"), blank=False, max_length=255)
+    general_size = models.PositiveIntegerField(
+        _("Repo size in KB."),
+        blank=False,
+    )
+    used_size = models.PositiveIntegerField(
+        _("Repo used size in KB."),
+        blank=False,
+    )
+    available_size = models.GeneratedField(
+        expression=F("general_size") - F("used_size"),
+        output_field=models.PositiveIntegerField(),
+        db_persist=True,  # for postgres
+        db_comment="If < 500mb, then storage will not be available for creating new repositories."
+    )
 
     objects = RepoManager()
 
     class Meta:
         db_table = 'repo'
         unique_together = ('user', 'repo_name')
+
+
+@receiver(post_delete, sender=Repo)
+async def on_repo_delete(sender, instance: Repo, **kwargs):
+    storage = await Storage.objects.get(pk=instance.storage.pk)
+    await Repo.objects.adelete_repo_folder(storage.name, instance.path)
+    LOGGER.info(f"Success delete '{instance.repo_name}' repository.")
 
 
 class Storage(models.Model):
@@ -131,27 +154,19 @@ class Storage(models.Model):
             'max_length': _("Storage name must be less than 32 characters."),
         }
     )
-    general_size = models.PositiveIntegerField(
-        _("Storage size in KB."),
-        blank=False,
-    )
-    used_size = models.PositiveIntegerField(
-        _("Storage used size in KB."),
-        blank=False,
-    )
-    available_size = models.GeneratedField(
-        expression=F("general_size") - F("used_size"),
-        output_field=models.PositiveIntegerField(),
-        db_persist=True,  # for postgres
-        db_comment="If < 500mb, then storage will not be available for creating new repositories."
-    )
     path = models.CharField(max_length=255, blank=False)
     ssh_host = models.CharField(max_length=128, blank=False)
     ssh_port = models.IntegerField(blank=True, null=True)
     ssh_username = models.CharField(max_length=32, blank=False)
-    # ssh_password = models.CharField(max_length=128, blank=False)
 
     objects = StorageManager()
 
     class Meta:
         db_table = 'storage'
+
+    async def is_available(self, required_size: int) -> bool:
+        try:
+            size = await df_avail(self.name, self.path, logs=True)
+            return size > required_size
+        except (RuntimeError, ValueError):
+            return False

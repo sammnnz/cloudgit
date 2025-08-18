@@ -42,20 +42,76 @@ async def repo_create(request, data: RepoCreateInSchema):
                 _data = await response.json()
                 user = await AuthUserExternal.objects.acreate_user(user_id=_data["id"], username=_data["username"])
 
-    storage = await Storage.objects.aget_safe(name='storage-1')
+    repo = await Repo.objects.aget_safe(user_id=user.pk, repo_name=data.reponame)
+    if repo is not None:
+        return 422, f"Repository '{data.reponame}' already exists."
+
+    storage = await Storage.objects.aget_or_create_first_available_storage(50 * 1024)  # 50MB to KB
     if storage is None:
-        storage = await Storage.objects.acreate_storage('storage-1')
+        return 404, "Doesn't available storages."
 
     try:
         await Repo.objects.acreate_repo(user=user,
                                         storage=storage,
                                         repo_name=data.reponame,
                                         access=data.access,
-                                        description=data.description)
+                                        description=data.description,
+                                        general_size=50 * 1024)
     except IntegrityError:
-        return 422, f"Repository '{data.reponame}' already exists."
+        return 422, f"Repository '{data.reponame}' already exists or problems with database."
+    except RuntimeError:
+        return 404, f"Problems with storage '{storage.name}'."
 
     return 200, None
+
+
+@router.post('/repo/delete/', response={200: None, 404: str, 422: str})
+async def repo_delete(request, data: RepoDeleteInSchema):
+    user = await AuthUserExternal.objects.aget_safe(username=data.username)
+    if user is None:
+        return 404, f"User '{data.username}' not found."
+
+    repo = await Repo.objects.aget_safe(user_id=user.pk, repo_name=data.reponame)
+    if repo is None:
+        return 200, None
+
+    try:
+        await repo.adelete()
+    except Exception as e:
+        return 404, str(e)
+
+    return 200, None
+
+
+@router.post('/repo/data/get/', response={200: list, 404: str})
+async def repo_data_get(request, data: RepoDataGetInSchema):
+    user = await AuthUserExternal.objects.aget_safe(username=data.username)
+    if user is None:
+        return 404, f"User '{data.username}' could not be found."
+
+    repo = await Repo.objects.aget_safe(user=user, repo_name=data.reponame)
+    if repo is None:
+        return 404, f"Repository '{data.reponame}' could not be found."
+
+    storage = await Storage.objects.aget_safe(id=repo.storage_id)
+    try:
+        Path(data.path).relative_to(Path(repo.path))
+    except ValueError:
+        path = repo.path
+    else:
+        path = repo.path + "/" + data.path
+
+    try:
+        repo_data = await Repo.objects.aget_repo_data_json(storage_name=storage.name,
+                                                           path=path,
+                                                           branch=data.branch,
+                                                           depth=-1)
+        return 200, repo_data
+    except RuntimeError as e:
+        try:
+            return 404, "Problem with getting repo data."
+        finally:
+            raise e
 
 
 @router.post('/repo/get/', response={200: List[RepoGetOutSchema], 404: str})
