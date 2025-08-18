@@ -39,7 +39,7 @@
     font-size: 10px;
 }
 
-.access-label{
+.access-label, .access-label-lock{
     background: var(--color-base-accent);
     width: fit-content;
     height: fit-content;
@@ -50,6 +50,10 @@
 
 .access-label:hover{
     background: var(--color-base-accent-dark);
+}
+
+.access-label-lock:hover{
+
 }
 
 .create-btn{

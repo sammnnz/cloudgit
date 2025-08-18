@@ -50,7 +50,8 @@ const RepositoriesBlock = ({account, session}) => {
                 <RepoCreateForm lock={true}
                                 access={repo.access}
                                 reponame={repo.repo_name}
-                                description={repo.description} />
+                                description={repo.description}
+                                href={accountUsername + "/" + repo.repo_name}/>
             )
         }
     }

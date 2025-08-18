@@ -29,6 +29,9 @@ export default defineConfig({
         outDir: "build",
         target: "es2017",
     },
+    preview: {
+        port: 3000
+    }
 });
 
 // NOTE:

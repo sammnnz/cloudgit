@@ -2,20 +2,21 @@ import React from "react";
 import {useLoaderData, useParams} from "react-router";
 import {showServerMessage} from "@common/utils";
 import Navbar from "@/components/account/Navbar";
+import RepoDataBlock from "@/components/repodata/RepoDataBlock"
 
-const RepoInstance = () => {
-    const {username, reponame} = useParams(),
+const RepoData = () => {
+    const {username} = useParams(),
         account = {username};
     const data = useLoaderData(),
-        {session} = data;
+        {session, repo} = data;
     if (!session) showServerMessage();
 
     return (
-        <div className="repoinstance-container">
+        <div className="repodata-container">
             <Navbar account={account} session={session}/>
-            <h1>{reponame} repository.</h1>
+            <RepoDataBlock account={account} session={session} repo={repo}/>
         </div>
     );
 }
 
-export default RepoInstance;
+export default RepoData;

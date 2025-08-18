@@ -14,8 +14,7 @@ const SettingsBlock = ({account, session}) => {
         const response = await postUserDelete(),
             status = response?.status;
         if (200 <= status && status < 300) {
-            let path = window.location.href;
-            window.location.href = path;
+            window.location.href = "/";
         } else {
             alert("Delete failed. Please try again.");
         }

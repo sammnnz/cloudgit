@@ -3,10 +3,9 @@ import { lazyLoad } from "@/common/utils";
 import { loader as WelcomeLoader } from "@/loaders/welcome";
 import { loader as SignupLoader } from "@/loaders/signup";
 import { loader as SigninLoader } from "@/loaders/signin";
-// import { loader as DashboardLoader} from "@/loaders/_draft/03082025/dashboard.jsx";
 import { loader as HomeLoader } from "@/loaders/home";
 import { loader as AccountLoader } from "@/loaders/account";
-import { loader as RepoInstanceLoader } from "@/loaders/repoinstance";
+import { loader as RepoDataLoader } from "@loaders/repodata";
 
 
 const
@@ -14,9 +13,8 @@ const
     Welcome = lazyLoad(() => import("@/pages/Welcome")),
     Signup = lazyLoad(() => import("@/pages/Signup")),
     Signin = lazyLoad(() => import("@/pages/Signin")),
-    // Dashboard = lazyLoad(() => import("@pages/_draft/03082025/Dashboard.jsx")),
     Account = lazyLoad(() => import("@pages/Account.jsx")),
-    RepoInstance = lazyLoad(() => import("@/pages/RepoInstance"));
+    RepoData = lazyLoad(() => import("@pages/RepoData.jsx"));
 const routes = [
     {
         Component: App,
@@ -36,11 +34,6 @@ const routes = [
                 element: <Signin />,
                 loader: SigninLoader
             },
-            // {
-            //     path: "/dashboard",
-            //     element: <Dashboard />,
-            //     loader: DashboardLoader
-            // },
             {
                 path: "/home",
                 element: <Welcome />,
@@ -53,8 +46,8 @@ const routes = [
             },
             {
                 path: "/account/:username/:reponame",
-                element: <RepoInstance />,
-                loader: RepoInstanceLoader
+                element: <RepoData />,
+                loader: RepoDataLoader
             },
         ]
     }

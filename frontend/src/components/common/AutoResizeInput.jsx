@@ -11,7 +11,8 @@ const AutoResizeInput = ({
                              styles,
                              stylesheets,
                              maxlength,
-                             onchange
+                             onchange,
+                             href
 }) => {
     if (typeof cursor !== "boolean")
         cursor = false;
@@ -87,7 +88,7 @@ const AutoResizeInput = ({
     return (
         <ShadowRoot onload={onShadowRootLoad} pureStyles={[autoResizeInputCSS, ...styles]} stylesheets={stylesheets}>
             <style>{dynamicDisplaceStyle}</style>
-            {lock ? <div className="input input-lock">{defaultValue}</div> :
+            {lock ? <a href={href} className="input input-lock">{defaultValue}</a> :
                 <input id="input"
                        className="input"
                        ref={inputRef}

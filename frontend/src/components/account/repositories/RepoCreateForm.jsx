@@ -10,7 +10,8 @@ import {convertResponseData, showServerMessage} from "@common/utils.jsx";
 const RepoCreateForm = ({lock = false,
                          access = 'public',
                          reponame = 'new-repo',
-                         description = ''}) => {
+                         description = '',
+                         href = ''}) => {
     const accessButtonRef = useRef(null),
         createButtonRef = useRef(null),
         repoNameContentRef = useRef(null),
@@ -33,6 +34,12 @@ const RepoCreateForm = ({lock = false,
 .input, .input-buffer{
     font-weight: bold;
     font-size: 16px
+}
+.input-lock{
+    color: #000000;
+}
+.input-lock:hover{
+    color: var(--color-base-accent);
 }
 `
     const { constructableStylesheetsSupported } = ReactShadowRoot,
@@ -94,10 +101,11 @@ const RepoCreateForm = ({lock = false,
                                 stylesheets={[repoNameSheet]}
                                 lock={lock}
                                 maxlength="32"
-                                onchange={onRepoNameChange}/>
+                                onchange={onRepoNameChange}
+                                href={href}/>
                         </div>
                         <div className="repoaccess-content">
-                            <button ref={accessButtonRef} className="access-label">{access}</button>
+                            <button ref={accessButtonRef} className={lock ? "access-label-lock" : "access-label"}>{access}</button>
                         </div>
                     </div>
                     <div ref={repoDescriptionContentRef} className="content-2">

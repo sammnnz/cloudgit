@@ -28,9 +28,9 @@ const Navbar = ({account, session}) => {
         (<button ref={buttonRef} className="button button-base">
             Logout
         </button>),
-        (
+        (<a href={`/account/${sessionUsername}`}>
             <img src={iconAvatarDefault} height="24px" alt=""/>
-        )
+        </a>)
     ]
 
     const noAuthButtons = [
