@@ -136,7 +136,7 @@ class Repo(models.Model):
 
 @receiver(post_delete, sender=Repo)
 async def on_repo_delete(sender, instance: Repo, **kwargs):
-    storage = await Storage.objects.get(pk=instance.storage.pk)
+    storage = await Storage.objects.aget_safe(id=instance.storage_id)
     await Repo.objects.adelete_repo_folder(storage.name, instance.path)
     LOGGER.info(f"Success delete '{instance.repo_name}' repository.")
 

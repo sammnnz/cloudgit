@@ -114,6 +114,9 @@ class RepoManager(BaseManager):
             await self.adelete_repo_folder(storage_name=storage.name, path=path)
             raise e
 
+    async def adelete_repo(self, repo: Repo):
+        await repo.adelete(using=self._db)
+
     @staticmethod
     async def acreate_repo_folder(storage_name: str, path: str, logs: bool = False):
         output = await git_init(storage_name, path, logs)

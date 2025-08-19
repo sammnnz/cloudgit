@@ -76,7 +76,7 @@ async def repo_delete(request, data: RepoDeleteInSchema):
         return 200, None
 
     try:
-        await repo.adelete()
+        await Repo.objects.adelete_repo(repo)
     except Exception as e:
         return 404, str(e)
 
