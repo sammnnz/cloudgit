@@ -45,7 +45,7 @@ const routes = [
                 loader: AccountLoader
             },
             {
-                path: "/account/:username/:reponame",
+                path: "/account/:username/:reponame",  // ?tab=settings    ?tab=statistics
                 element: <RepoData />,
                 loader: RepoDataLoader
             },
