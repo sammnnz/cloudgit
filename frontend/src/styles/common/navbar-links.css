@@ -34,8 +34,8 @@
     font-weight: 600;
 }
 
-.dropdown a:last-child{
-    margin-bottom: 0;
+.dropdown .link-container:last-child:not(:empty) a{
+    margin-bottom: 0 !important;
 }
 
 .dropdown a:hover{

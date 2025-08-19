@@ -1,22 +1,23 @@
 import React from "react";
 import {Navbar as _Navbar} from "@/components/common/Navbar";
-import navbarCSS from "@/styles/account/navbar.module.css"
+import navbarCSS from "@/styles/repodata/navbar.module.css"
 
-const Navbar = ({account, session}) => {
+const Navbar = ({account, repo, session}) => {
     const accountUsername = account.username,
-        sessionUsername = session.username;
+        sessionUsername = session.username,
+        repoName = repo.repo_name;
 
     const links = {
         'Profile': {
             href: '/account/' + accountUsername + '?tab=profile',
             links: undefined
         },
-        'Repositories': {
-            href: '/account/' + accountUsername + '?tab=repositories',
+        'Settings': {
+            href: '/account/' + accountUsername + '/' + repoName + '?tab=settings',
             links: undefined
         },
-        'Settings': {
-            href: '/account/' + accountUsername + '?tab=settings',
+        'Statistics': {
+            href: '/account/' + accountUsername + '/' + repoName + '?tab=statistics',
             links: undefined
         }
     }

@@ -31,7 +31,14 @@
 
 .buttons .button{
     margin-right: 12px;
+    font-size: 12px;
 }
+
 .buttons .button:last-child{
     margin-right: 0;
+}
+
+.buttons .button-base:hover{
+    border: 1px solid #ffffff !important;
+    color: #ffffff !important;
 }
