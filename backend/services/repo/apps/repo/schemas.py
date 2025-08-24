@@ -1,16 +1,17 @@
-from pathlib import Path
-
+import os
 from ninja import ModelSchema, Schema
 from ninja.errors import HttpError
-# from ninja.schema import S
 from pydantic import field_validator
-from typing import Optional, Literal  # , Type, Any
-
-from common.utils import check_path
+from typing import Optional, Literal
 from .managers import RepoAccessEnum
-from .models import AuthUserExternal, Repo
+from .models import AuthUserExternal, Repo, Storage
 
 AccessLiteral = Literal["private", "public"]
+
+
+class AuthUserInSchema(Schema):
+    id: int
+    username: str
 
 
 class RepoGetInSchema(Schema):
@@ -57,13 +58,13 @@ class RepoDataGetInSchema(Schema):
     username: str = ...
     reponame: str = ...
     branch: str = ...
-    path: str = ...
+    dir: str = ...
 
-    @field_validator('path', check_fields=False, mode='after')
+    @field_validator('dir', check_fields=False, mode='after')
     @classmethod
     def validate_path(cls, value):
-        if not check_path(value):
-            raise HttpError(422, f"Invalid path '{value}'.")
+        if os.sep in value or os.altsep in value:
+            raise HttpError(422, f"Invalid directory name '{value}'.")
 
         return value
 
@@ -106,6 +107,7 @@ class RepoDeleteInSchema(Schema):
     reponame: str = ...
 
 
-class StorageSchema(Schema):
-    link: str
-    type: str
+class StorageOutSchema(ModelSchema):
+    class Meta:
+        model = Storage
+        fields = "__all__"

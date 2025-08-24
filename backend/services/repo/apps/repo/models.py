@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 # https://pypi.org/project/django-enum/
 from django_enum import EnumField
 
-from .bash_api import df_avail
+from .api.bash import df_avail
 from .managers import AuthUserExternalManager, MaitainerAccessEnum, RepoAccessEnum, RepoManager, StorageManager
 
 LOGGER = logging.getLogger('repo')
@@ -40,8 +40,11 @@ async def _on_change_user(msg: AbstractIncomingMessage):
         raise CancelAcknowledge
 
     action = data.get('action', '')
-    fn = getattr(AuthUserExternal.objects, 'a' + action + '_user', None)
-    if fn is None:
+    if action == 'create':
+        fn = AuthUserExternal.objects.acreate_user
+    elif action == 'delete':
+        fn = AuthUserExternal.objects.adelete_user
+    else:
         raise CancelAcknowledge
 
     try:
@@ -57,7 +60,7 @@ async def _on_change_user(msg: AbstractIncomingMessage):
 class AuthUserExternal(models.Model):
     id = models.AutoField(_("id"), primary_key=True)
     user_id = models.IntegerField(_("user id"), unique=True, blank=False)
-    username = models.CharField(_("username"), max_length=150, blank=False)
+    username = models.CharField(_("username"), unique=True, max_length=150, blank=False)
 
     objects = AuthUserExternalManager()
 
@@ -136,9 +139,13 @@ class Repo(models.Model):
 
 @receiver(post_delete, sender=Repo)
 async def on_repo_delete(sender, instance: Repo, **kwargs):
-    storage = await Storage.objects.aget_safe(id=instance.storage_id)
-    await Repo.objects.adelete_repo_folder(storage.name, instance.path)
-    LOGGER.info(f"Success delete '{instance.repo_name}' repository.")
+    try:
+        storage = await Storage.objects.aget_safe(id=instance.storage_id)
+        await Repo.objects.adelete_repo_folder(storage.name, instance.path)
+    except Exception as e:
+        LOGGER.warning(e, exc_info=True)
+    else:
+        LOGGER.info(f"Success delete '{instance.repo_name}' repository.")
 
 
 class Storage(models.Model):

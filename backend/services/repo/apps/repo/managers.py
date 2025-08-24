@@ -7,7 +7,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
 from typing import Literal, Optional, TypeVar, Any, Coroutine
 from utils import get_storage_from_settings, check_storage
-from .bash_api import git_checkout_and_gdsjson, git_init, rm
+from .api.bash import git_gds, git_init_bare, rm
 
 LOGGER = logging.getLogger('repo')
 Repo = TypeVar('Repo', 'RepoManager', models.Model)
@@ -38,8 +38,8 @@ class AuthUserExternalManager(BaseManager):
 
         try:
             user: models.Model = await self.aget_safe(user_id=user_id, username=username)
-        except MultipleObjectsReturned:
-            raise
+        except MultipleObjectsReturned as e:
+            raise e
 
         if user is None:
             return None
@@ -97,7 +97,7 @@ class RepoManager(BaseManager):
         if not isinstance(general_size, int) or general_size < 0:
             raise TypeError("'general_size' must be a positive integer.")
 
-        path = storage.path + '/' + user.username + '/' + repo_name
+        path = storage.path + '/' + user.username + '/' + repo_name + '.git'
         if not check_path(path):
             raise TypeError("'path' is not valid.")
 
@@ -119,7 +119,7 @@ class RepoManager(BaseManager):
 
     @staticmethod
     async def acreate_repo_folder(storage_name: str, path: str, logs: bool = False):
-        output = await git_init(storage_name, path, logs)
+        output = await git_init_bare(storage_name, path, logs)
         LOGGER.info(output)
 
     @staticmethod
@@ -128,8 +128,8 @@ class RepoManager(BaseManager):
         LOGGER.info(output)
 
     @staticmethod
-    async def aget_repo_data_json(storage_name: str, path: str, branch: str, depth: int = -1):
-        json = await git_checkout_and_gdsjson(name=storage_name, path=path, branch=branch, depth=depth)
+    async def aget_repo_data_json(storage_name: str, path: str, dir: str, branch: str, depth: int = -1):
+        json = await git_gds(name=storage_name, path=path, dir=dir, branch=branch, depth=depth)
         return json
 
 

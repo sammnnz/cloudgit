@@ -6,7 +6,8 @@ from types import ModuleType
 
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication, ABC):
-    def __init__(self, options=None):
+    def __init__(self, app: str, options=None):
+        self.app = app if isinstance(app, str) else None
         self.options = options if isinstance(options, ModuleType) else None
         super().__init__()
 
@@ -22,9 +23,16 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication, ABC):
                 self.cfg.set(key.lower(), getattr(self.options, key))
 
     def load(self):
-        import server.asgi
-        return server.asgi.application
+        if self.app is None:
+            raise TypeError("ASGI application must be defined.")
+
+        asgi = __import__(self.app)
+        application = getattr(asgi, "application", None)
+        if application is None:
+            raise AttributeError("ASGI application must be defined.")
+
+        return application
 
 
 if __name__ == "__main__":
-    StandaloneApplication(options=gunicorn_conf).run()
+    StandaloneApplication(app="server.asgi", options=gunicorn_conf).run()
