@@ -37,13 +37,13 @@ RUN addgroup --gid 1001 ${USERNAME} && \
 
 WORKDIR /home/${USERNAME}
 
-COPY --chown=${USERNAME}:${USERNAME} ./utils/gdsjson.sh ./utils/gdsjson.sh
+COPY --chown=${USERNAME}:${USERNAME} ./utils/gitgds.sh ./utils/gitgds.sh
 
-RUN chmod +x ./utils/gdsjson.sh
+RUN chmod +x ./utils/gitgds.sh
 
 USER 1001
 
-RUN echo "alias gdsjson='bash ~/utils/gdsjson.sh'" >> ~/.bashrc
+RUN echo "alias gitgds='bash ~/utils/gitgds.sh'" >> ~/.bashrc
 
 CMD ["sudo", "/usr/sbin/sshd", "-D"]
 #CMD ["sleep", "infinity"]
