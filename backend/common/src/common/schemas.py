@@ -29,3 +29,15 @@ class RabbitSchema(Schema):
     @classmethod
     def delete(cls, obj: Model, info: dict = None) -> "RabbitSchema":
         return cls.from_orm(obj, action="delete", info=info)
+
+
+class SSHConnection(Schema):
+    host: str
+    port: int
+    username: str
+    client_keys: list[str]
+
+
+class StorageSchema(Schema):
+    ssh: SSHConnection
+    path: str

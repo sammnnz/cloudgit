@@ -101,7 +101,7 @@ class repeat:
                         LOGGER.warning(e, exc_info=True)
                 except Exception as e:
                     if self.fail_on_error:
-                        raise
+                        raise e
                     elif self.logs:
                         LOGGER.warning(e, exc_info=True)
                 else:
