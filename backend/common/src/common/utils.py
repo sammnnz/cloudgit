@@ -22,6 +22,7 @@ __all__ = [
     "lock",
     "record",
     "repeat",
+    "parse_keys",
     "ProxyField",
     "singleton"
 ]
@@ -247,6 +248,20 @@ def record(fn) -> Callable[..., Coroutine[Any, Any, Any]]:
         raise TypeError(f"'{fn}' must be a generator function or async generator function.")
 
     return wrapper
+
+
+def parse_keys(keys: str):
+    keys = keys.split(";")
+    for key in keys:
+        if is_simple_stroke(key):
+            continue
+
+        key = key.strip()
+        if not check_path(key):
+            raise TypeError("'keys' string must be in the format: 'key1; key2; ...',"
+                            "where each key points to a file with a host/client key.")
+
+        yield key
 
 
 def singleton(cls: type):

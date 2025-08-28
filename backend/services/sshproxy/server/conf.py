@@ -1,13 +1,13 @@
 import dotenv
 import os
 
-if os.getenv("DEBUG"):
+if not not os.getenv("DEBUG"):
     dotenv.load_dotenv("dev/.env")
     dotenv.load_dotenv("../../.env")
 
 from asyncssh import SSHServer
+from common.utils import parse_keys
 from src.sshproxy import SSHProxyServer, SSHClient
-from src.utils import parse_keys
 from typing import Type
 
 host: str = os.getenv('SSHPROXY_HOST') or ""

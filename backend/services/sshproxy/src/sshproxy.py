@@ -5,10 +5,11 @@ import os
 
 from asyncssh import SSHClientConnection
 from common.ssh import get_connection_ssh, SSHClient as _SSHClient, ssh_connect
+from common.utils import parse_keys
 from typing import Optional
 from .api import get_storage
 from .schemas import StorageInSchema
-from .utils import parse_command, parse_keys
+from .utils import parse_command
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,19 +36,16 @@ class SSHClient(_SSHClient):
         storage: StorageInSchema = await get_storage(self.username, self.reponame)
         connection = get_connection_ssh(storage.name)
         if not isinstance(connection, SSHClientConnection):
-            try:
-                await ssh_connect(
-                    storage.name,
-                    True,
-                    host=storage.ssh_host,
-                    port=storage.ssh_port,
-                    username=storage.ssh_username,
-                    client_keys=CLIENT_KEYS,
-                    encryption_algs='+aes128-cbc,aes256-cbc',
-                    known_hosts=None
-                )
-            except (OSError, asyncio.TimeoutError, asyncio.CancelledError):
-                pass
+            await ssh_connect(
+                storage.name,
+                True,
+                host=storage.ssh_host,
+                port=storage.ssh_port,
+                username=storage.ssh_username,
+                client_keys=CLIENT_KEYS,
+                encryption_algs='+aes128-cbc,aes256-cbc',
+                known_hosts=None
+            )
 
         self._conn = get_connection_ssh(storage.name)
         self.command += " '%s/%s/%s.git'" % (storage.path, self.username, self.reponame)

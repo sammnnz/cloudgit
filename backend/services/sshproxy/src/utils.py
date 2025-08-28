@@ -2,8 +2,8 @@ import os
 import re
 
 from asyncssh import SSHServer
-from common.utils import check_path, is_simple_stroke
 from common.ssh import SSHClient
+from common.utils import is_simple_stroke
 from types import ModuleType
 
 CONF_FIELDS = {
@@ -73,17 +73,3 @@ def parse_command(command: str) -> tuple[str, str]:
             continue
 
     raise RuntimeError(f"Invalid command: {command}")
-
-
-def parse_keys(keys: str):
-    keys = keys.split(";")
-    for key in keys:
-        if is_simple_stroke(key):
-            continue
-
-        key = key.strip()
-        if not check_path(key):
-            raise TypeError("'keys' string must be in the format: 'key1; key2; ...',"
-                            "where each key points to a file with a host/client key.")
-
-        yield key
