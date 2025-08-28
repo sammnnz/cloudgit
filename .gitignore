@@ -2,3 +2,4 @@ db.*
 *.db
 .idea
 .env
+_ssh

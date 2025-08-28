@@ -1,0 +1,67 @@
+networks:
+  cloudgit:
+
+services:
+  auth:
+    expose:
+      - ${AUTH_PORT}
+    environment:
+      REMOTE_SERVER_URL: ${SCHEME}://nginx:${NGINX_HTTP_PORT}
+  auth_db:
+    expose:
+      - ${POSTGRES_PORT}
+  repo:
+    expose:
+      - ${REPO_PORT}
+    environment:
+      REMOTE_SERVER_URL: ${SCHEME}://nginx:${NGINX_HTTP_PORT}
+  repo_db:
+    expose:
+      - ${POSTGRES_PORT}
+  pgadmin:
+    ports:
+      - "127.0.0.1:5080:80"
+  sshproxy:
+    expose:
+      - ${SSHPROXY_PORT}
+    environment:
+      REMOTE_SERVER_URL: ${SCHEME}://nginx:${NGINX_HTTP_PORT}
+  frontend:
+    expose:
+      - ${FRONTEND_PORT}
+  rabbitmq:
+    expose:
+      - ${RABBITMQ_NODE_PORT}
+  storage_1:
+    expose:
+      - "22"
+  storage_2:
+    expose:
+      - "22"
+  nginx:
+    restart: always
+    build:
+      context: ../nginx
+      args:
+        AUTH_PORT: ${AUTH_PORT}
+        FRONTEND_PORT: ${FRONTEND_PORT}
+        RABBITMQ_NODE_PORT: ${RABBITMQ_NODE_PORT}
+        REPO_PORT: ${REPO_PORT}
+        SSHPROXY_PORT: ${SSHPROXY_PORT}
+    container_name: nginx
+    user: "1001:1001"
+    env_file:
+      - ./.env
+    ports:
+      - ${NGINX_EXT_HOST}:${NGINX_HTTP_EXT_PORT}:${NGINX_HTTP_PORT}
+      - ${NGINX_EXT_HOST}:${NGINX_SSH_EXT_PORT}:${NGINX_SSH_PORT}
+    networks:
+      - cloudgit
+    depends_on:
+      - rabbitmq
+      - frontend
+      - storage_1
+      - storage_2
+      - auth
+      - repo
+      - sshproxy

@@ -1,0 +1,56 @@
+networks:
+  cloudgit:
+
+services:
+  auth:
+    ports:
+      - 127.0.0.1:8000:${AUTH_PORT}
+    environment:
+      REMOTE_SERVER_URL: ${SCHEME}://nginx-dev:${NGINX_HTTP_PORT}
+  auth_db:
+    ports:
+      - 127.0.0.1:5430:${POSTGRES_PORT}
+  repo:
+    ports:
+      - 127.0.0.1:8001:${REPO_PORT}
+    environment:
+      REMOTE_SERVER_URL: ${SCHEME}://nginx-dev:${NGINX_HTTP_PORT}
+  repo_db:
+    ports:
+      - 127.0.0.1:5429:${POSTGRES_PORT}
+  pgadmin:
+    ports:
+      - "127.0.0.1:5080:80"
+  sshproxy:
+    ports:
+      - ${SSHPROXY_EXT_HOST}:${SSHPROXY_EXT_PORT}:${SSHPROXY_PORT}
+    environment:
+      REMOTE_SERVER_URL: ${SCHEME}://nginx-dev:${NGINX_HTTP_PORT}
+  frontend:
+    ports:
+      - 127.0.0.1:3000:${FRONTEND_PORT}
+  rabbitmq:
+    ports:
+      - 127.0.0.1:5672:${RABBITMQ_NODE_PORT} # AMQP
+      - "127.0.0.1:15672:15672"              # management
+  storage_1:
+    ports:
+      - 127.0.0.1:2222:${STORAGE_1_PORT}
+  storage_2:
+    ports:
+      - 127.0.0.1:2223:${STORAGE_2_PORT}
+  nginx-dev:
+    image: nginx:1.29.0-alpine-slim
+    container_name: nginx-dev
+    ports:
+      - ${NGINX_EXT_HOST}:${NGINX_HTTP_EXT_PORT}:${NGINX_HTTP_PORT}
+      - ${NGINX_EXT_HOST}:${NGINX_SSH_EXT_PORT}:${NGINX_SSH_PORT}
+    volumes:
+      - ../nginx/proxy_params:/etc/nginx/proxy_params
+      - ../nginx/dev/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - rabbitmq
+      - auth_db
+      - repo_db
+      - storage_1
+      - storage_2

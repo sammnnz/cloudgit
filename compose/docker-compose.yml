@@ -3,10 +3,14 @@ networks:
   cloudgit:
 
 services:
-  # docker build -t cloudgit-auth --build-context common=./backend/common  backend/services/auth
   auth:
     restart: always
-    image: cloudgit-auth:latest
+    build:
+      context: ../backend/services/auth
+      additional_contexts:
+        - common=../backend/common
+      args:
+        USERNAME: ${CLOUDGIT_USER}
     container_name: auth
     security_opt:
       - no-new-privileges
@@ -15,8 +19,6 @@ services:
     user: "1001:1001"
     networks:
       - cloudgit
-    ports:
-      - 127.0.0.1:8000:${AUTH_PORT}
     env_file:
       - ./.env
     environment:
@@ -35,7 +37,6 @@ services:
       DJANGO_SETTINGS_MODULE: settings
       GUNICORN_HOST: ${AUTH_HOST}
       GUNICORN_PORT: ${AUTH_PORT}
-      REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}:${NGINX_EXT_PORT}
     command: >
       sh -c "
       python ./manage.py migrate &&
@@ -51,7 +52,7 @@ services:
   auth_db:
     restart: always
     build:
-      context: ./backend/services/auth/db
+      context: ../backend/services/auth/db
       args:
         PGDATA: ${PGDATA}
         POSTGRES_DB: ${AUTH_DB_NAME}
@@ -67,15 +68,17 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    ports:
-      - 127.0.0.1:5430:${POSTGRES_PORT}
     volumes:
       - auth_db_data:${PGDATA}
 
-  # docker build -t cloudgit-repo --build-context common=./backend/common  backend/services/repo
   repo:
     restart: always
-    image: cloudgit-repo:latest
+    build:
+      context: ../backend/services/repo
+      additional_contexts:
+        - common=../backend/common
+      args:
+        USERNAME: ${CLOUDGIT_USER}
     container_name: repo
     security_opt:
       - no-new-privileges
@@ -84,8 +87,6 @@ services:
     user: "1001:1001"
     networks:
       - cloudgit
-    ports:
-      - 127.0.0.1:8001:${REPO_PORT}
     env_file:
       - ./.env
     environment:
@@ -104,10 +105,9 @@ services:
       DJANGO_SETTINGS_MODULE: settings
       GUNICORN_HOST: ${REPO_HOST}
       GUNICORN_PORT: ${REPO_PORT}
-      REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}:${NGINX_EXT_PORT}
-      STORAGE_1_CLIENT_KEY_PATH: ~/.ssh/${STORAGE_1_NAME}
+      STORAGE_1_CLIENT_KEY_PATH: ${CLIENT_KEYS_DIR}/${STORAGE_1_NAME}
       STORAGE_1_USERNAME: ${CLOUDGIT_USER}
-      STORAGE_2_CLIENT_KEY_PATH: ~/.ssh/${STORAGE_2_NAME}
+      STORAGE_2_CLIENT_KEY_PATH: ${CLIENT_KEYS_DIR}/${STORAGE_2_NAME}
       STORAGE_2_USERNAME: ${CLOUDGIT_USER}
     command: >
       sh -c "
@@ -120,11 +120,13 @@ services:
       rabbitmq:
         condition: service_started
         restart: true
+    volumes:
+      - ../_ssh/storage_keys/:${CLIENT_KEYS_DIR}
 
   repo_db:
     restart: always
     build:
-      context: ./backend/services/repo/db
+      context: ../backend/services/repo/db
       args:
         PGDATA: ${PGDATA}
         POSTGRES_DB: ${REPO_DB_NAME}
@@ -140,8 +142,6 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    ports:
-      - 127.0.0.1:5429:${POSTGRES_PORT}
     volumes:
       - repo_db_data:${PGDATA}
   
@@ -154,27 +154,48 @@ services:
     env_file:
       - ./.env
     environment:
-      PGUSER: ${POSTGRES_USER}
-      POSTGRES_DB: ${AUTH_DB_NAME}
-    ports:
-      - 127.0.0.1:5080:80
-    depends_on:
-      auth_db:
-        condition: service_healthy
-        restart: true
+      PGUSER: ${CLOUDGIT_USER}
+
+  sshproxy:
+    restart: always
+    build:
+      context: ../backend/services/sshproxy
+      additional_contexts:
+        - common=../backend/common
+      args:
+        USERNAME: ${CLOUDGIT_USER}
+    container_name: sshproxy
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
+    user: "1001:1001"
+    networks:
+      - cloudgit
+    env_file:
+      - ./.env
+    environment:
+      SSHPROXY_AUTHORIZED_KEYS: /home/${CLOUDGIT_USER}/.ssh/authorized_keys
+      SSHPROXY_CLIENT_KEYS: ${CLIENT_KEYS_DIR}/${STORAGE_1_NAME};${CLIENT_KEYS_DIR}/${STORAGE_2_NAME};
+      SSHPROXY_SERVER_HOST_KEYS: ${HOST_KEYS_DIR}/ssh_host_ed25519_key;${HOST_KEYS_DIR}/ssh_host_rsa_key;${HOST_KEYS_DIR}/ssh_host_ecdsa_key;
+    command: >
+      sh -c "
+      python server/run.py"
+    volumes:
+      - ssh_proxy_auth_keys:/home/${CLOUDGIT_USER}/.ssh/authorized_keys
+      - ../_ssh/sshproxy_host_keys/:${HOST_KEYS_DIR}/
+      - ../_ssh/storage_keys/:${CLIENT_KEYS_DIR}/
 
   frontend:
     restart: always
     build:
-      context: ./frontend
+      context: ../frontend
       args:
         VITE_DEBUG: ${DEBUG}
-        VITE_REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}
+        VITE_REMOTE_SERVER_URL: ${SCHEME}://${NGINX_EXT_HOST}:${NGINX_HTTP_EXT_PORT}
     env_file:
       - ./.env
     container_name: frontend
-    ports:
-      - 127.0.0.1:3000:${FRONTEND_PORT}
     networks:
       - cloudgit
 
@@ -187,9 +208,6 @@ services:
       - ./.env
     environment:
       RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,error},{default,error}] disk_free_limit 536870912
-    ports:
-      - 127.0.0.1:5672:${RABBITMQ_NODE_PORT} # AMQP
-      - 127.0.0.1:15672:15672                # management
     networks:
       - cloudgit
     volumes:
@@ -198,7 +216,7 @@ services:
   storage_1:
     restart: always
     build:
-      context: ./storages/
+      context: ../storages/
       args:
         STORAGE_PATH: ${STORAGE_1_PATH}
         USERNAME: ${CLOUDGIT_USER}
@@ -209,20 +227,18 @@ services:
       - cloudgit
     env_file:
       - ./.env
-    ports:
-      - "127.0.0.1:2222:22"
     command: >
       sh -c "
       cat ~/.ssh/${STORAGE_1_NAME}.pub >> ~/.ssh/authorized_keys &&
       sudo /usr/sbin/sshd -D"
     volumes:
       - storage_1_data:${STORAGE_1_PATH}
-      - ~/.ssh/${STORAGE_1_NAME}.pub:/home/${CLOUDGIT_USER}/.ssh/${STORAGE_1_NAME}.pub
+      - ../_ssh/storage_keys/${STORAGE_1_NAME}.pub:/home/${CLOUDGIT_USER}/.ssh/${STORAGE_1_NAME}.pub
 
   storage_2:
     restart: always
     build:
-      context: ./storages/
+      context: ../storages/
       args:
         STORAGE_PATH: ${STORAGE_2_PATH}
         USERNAME: ${CLOUDGIT_USER}
@@ -233,58 +249,18 @@ services:
       - cloudgit
     env_file:
       - ./.env
-    ports:
-      - "127.0.0.1:2223:22"
     command: >
       sh -c "
       cat ~/.ssh/${STORAGE_2_NAME}.pub > ~/.ssh/authorized_keys &&
       sudo /usr/sbin/sshd -D"
     volumes:
       - storage_2_data:${STORAGE_2_PATH}
-      - ~/.ssh/${STORAGE_2_NAME}.pub:/home/${CLOUDGIT_USER}/.ssh/${STORAGE_2_NAME}.pub
-
-  nginx:
-    restart: always
-    build:
-      context: ./nginx
-      args:
-        AUTH_PORT: ${AUTH_PORT}
-        FRONTEND_PORT: ${FRONTEND_PORT}
-        RABBITMQ_NODE_PORT: ${RABBITMQ_NODE_PORT}
-        REPO_PORT: ${REPO_PORT}
-    container_name: nginx
-    user: "1001:1001"
-    env_file:
-      - ./.env
-    ports:
-      - ${NGINX_EXT_HOST}:${NGINX_EXT_PORT}:80
-    networks:
-      - cloudgit
-    depends_on:
-      - rabbitmq
-      - frontend
-      - auth
-      - repo
-
-  nginx-dev:
-    image: nginx:1.29.0-alpine-slim
-    container_name: nginx-dev
-    ports:
-      - "127.0.0.1:80:80"
-      - "127.0.0.1:23:22"
-    volumes:
-      - ./nginx/proxy_params:/etc/nginx/proxy_params
-      - ./nginx/dev/nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - rabbitmq
-      - auth_db
-      - repo_db
-      - storage_1
-      - storage_2
+      - ../_ssh/storage_keys/${STORAGE_2_NAME}.pub:/home/${CLOUDGIT_USER}/.ssh/${STORAGE_2_NAME}.pub
 
 volumes:
   auth_db_data:
   repo_db_data:
   rabbitmq_data:
+  ssh_proxy_auth_keys:
   storage_1_data:
   storage_2_data:
