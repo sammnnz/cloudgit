@@ -4,6 +4,7 @@ Django prod settings for repo service.
 """
 import os
 
+from common.utils import parse_keys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -18,7 +19,12 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'nginx',
+    'nginx-dev'
+]
 
 SERVICES = {
     'auth': os.getenv('REMOTE_SERVER_URL') + '/api/auth'
@@ -67,6 +73,7 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
 
 INSTALLED_APPS = [
     'django.contrib.admin',
+    'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.messages',  # for admin
     'corsheaders',
@@ -75,10 +82,12 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',  # for admin
     'corsheaders.middleware.CorsMiddleware'
 ]
 
@@ -118,7 +127,7 @@ RABBITMQ = {
     'defaults': {
         'exchange': 'cloudgit',
         'queues': [
-
+            "to_auth"
         ]
     }
 }
@@ -131,7 +140,7 @@ STORAGES = {
             'host': os.getenv('STORAGE_1_HOST'),
             'port': os.getenv('STORAGE_1_PORT'),
             'username': os.getenv('STORAGE_1_USERNAME'),
-            'client_keys': [os.getenv('STORAGE_1_CLIENT_KEY_PATH')],
+            'client_keys': [*parse_keys(os.getenv('STORAGE_1_CLIENT_KEY_PATH'))],
             'encryption_algs': '+aes128-cbc,aes256-cbc',
             'known_hosts': None
         },
@@ -142,11 +151,11 @@ STORAGES = {
             'host': os.getenv('STORAGE_2_HOST'),
             'port': os.getenv('STORAGE_2_PORT'),
             'username': os.getenv('STORAGE_2_USERNAME'),
-            'client_keys': [os.getenv('STORAGE_2_CLIENT_KEY_PATH')],
-            'encryption_algs': '+aes128-cbc,aes256-cbc'
+            'client_keys': [*parse_keys(os.getenv('STORAGE_2_CLIENT_KEY_PATH'))],
+            'encryption_algs': '+aes128-cbc,aes256-cbc',
+            'known_hosts': None
         },
         'path': os.getenv('STORAGE_2_PATH'),
-        'known_hosts': None
     }
 }
 

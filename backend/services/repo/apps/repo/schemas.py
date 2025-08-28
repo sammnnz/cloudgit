@@ -1,4 +1,3 @@
-import os
 from ninja import ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import field_validator
@@ -63,7 +62,7 @@ class RepoDataGetInSchema(Schema):
     @field_validator('dir', check_fields=False, mode='after')
     @classmethod
     def validate_path(cls, value):
-        if os.sep in value or os.altsep in value:
+        if "\\" in value or "/" in value:
             raise HttpError(422, f"Invalid directory name '{value}'.")
 
         return value

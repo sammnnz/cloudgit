@@ -26,7 +26,7 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication, ABC):
         if self.app is None:
             raise TypeError("ASGI application must be defined.")
 
-        asgi = __import__(self.app)
+        asgi = __import__(self.app, fromlist=['asgi'])
         application = getattr(asgi, "application", None)
         if application is None:
             raise AttributeError("ASGI application must be defined.")

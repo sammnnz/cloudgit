@@ -61,13 +61,13 @@ async def user_check(request, username: str):
 @router.post('/user/create/', response={204: None, 422: str})
 async def user_create(request, data: UserInSchema):
     try:
-        new_user = await User.objects.acreate_user(
+        user = await User.objects.acreate_user(
             data.username, data.email, data.password
         )
     except IntegrityError:
         return 422, f"User with username '{data.username}' or email '{data.email}' already exists."
 
-    msg = RabbitSchema.create(new_user, info={"username": data.username}).model_dump()
+    msg = RabbitSchema.create(user, info={"username": data.username}).model_dump()
     await rabbit.send(queues=['to_repo'], message=json_to_bytes(msg))
     return 204, None
 
@@ -85,7 +85,6 @@ async def user_delete(request):
 @router.get('/user/info', response={200: UserOutSchema, 404: str})
 async def user_info(request, username: str):
     user = await User.objects.aget_safe(username=username)
-    print(user)
     if user is not None:
         return 200, user
 

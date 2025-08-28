@@ -8,6 +8,7 @@ Note:
 """
 import os
 
+from common.utils import parse_keys
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -26,7 +27,12 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'nginx',
+    'nginx-dev'
+]
 
 SERVICES = {
     'auth': os.getenv('REMOTE_SERVER_URL') + '/api/auth'
@@ -142,7 +148,7 @@ STORAGES = {
             'host': os.getenv('STORAGE_1_HOST'),
             'port': os.getenv('STORAGE_1_PORT'),
             'username': os.getenv('STORAGE_1_USERNAME'),
-            'client_keys': [os.getenv('STORAGE_1_CLIENT_KEY_PATH')],
+            'client_keys': [*parse_keys(os.getenv('STORAGE_1_CLIENT_KEY_PATH'))],
             'encryption_algs': '+aes128-cbc,aes256-cbc',
             'known_hosts': None
         },
@@ -153,7 +159,7 @@ STORAGES = {
             'host': os.getenv('STORAGE_2_HOST'),
             'port': os.getenv('STORAGE_2_PORT'),
             'username': os.getenv('STORAGE_2_USERNAME'),
-            'client_keys': [os.getenv('STORAGE_2_CLIENT_KEY_PATH')],
+            'client_keys': [*parse_keys(os.getenv('STORAGE_2_CLIENT_KEY_PATH'))],
             'encryption_algs': '+aes128-cbc,aes256-cbc',
             'known_hosts': None
         },
