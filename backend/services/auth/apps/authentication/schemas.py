@@ -1,3 +1,4 @@
+from common.utils import is_simple_stroke
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError
@@ -6,7 +7,7 @@ from ninja import ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import field_validator
 from typing import Optional
-from .models import User
+from .models import User, SSHKey
 
 username_validator = UnicodeUsernameValidator()
 
@@ -76,3 +77,40 @@ class UserOutSchema(ModelSchema):
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name')
         fields_optional = ('first_name', 'last_name')
+
+
+class UserSSHKeyAddInSchema(Schema):
+    username: str
+    keyname: str
+    sshkey: str
+
+    @field_validator('sshkey', check_fields=False, mode='after')
+    @classmethod
+    def validate_sshkey(cls, value: str):
+        value = value.strip()
+        if is_simple_stroke(value):
+            raise HttpError(422, "SSH key must be not empty.")
+
+        if len(value) > 256:
+            raise HttpError(422, "SSH key must be <= 256 characters.")
+
+        return value
+
+
+class UserSSHKeysInSchema(Schema):
+    username: str
+    keyname: Optional[str] = None
+
+
+class _UserSSHKey(Schema):
+    id: int
+    username: str
+
+
+class UserSSHKeyOutSchema(ModelSchema):
+    user: _UserSSHKey
+
+    class Meta:
+        model = SSHKey
+        fields = ('id', 'keyname', 'sshkey')
+        fields_optional = ('fingerprint',)

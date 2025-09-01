@@ -1,16 +1,23 @@
+import logging
+
+from asgiref.sync import sync_to_async
 from common.rabbitmq import ARabbitMQService
 from common.schemas import RabbitSchema
 from common.utils import json_to_bytes
 from django.contrib.auth import aauthenticate, alogin, alogout
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import SynchronousOnlyOperation
 from django.db import IntegrityError
 from django.http import HttpResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from ninja import Router
-from .models import User
-from .schemas import SessionInfoOut, SessionLoginIn, UserOutSchema, UserInSchema
+from typing import Optional
+from .models import User, SSHKey
+from .schemas import SessionInfoOut, SessionLoginIn, UserOutSchema, UserInSchema, UserSSHKeyAddInSchema, \
+    UserSSHKeysInSchema, UserSSHKeyOutSchema
 
+logger = logging.getLogger('repo')
 rabbit = ARabbitMQService()
 router = Router()
 
@@ -89,3 +96,50 @@ async def user_info(request, username: str):
         return 200, user
 
     return 404, "User not found."
+
+
+@router.post('/user/sshkey/add/', response={200: None, 403: str, 500: str})
+async def user_sshkey_add(request, data: UserSSHKeyAddInSchema):
+    user = await User.objects.aget_safe(username=data.username)
+    if user is None:
+        return 403, f"User '{data.username}' not exists."
+
+    sshkey = SSHKey(user_id=user.pk, keyname=data.keyname, sshkey=data.sshkey, fingerprint=None)
+    try:
+        await sshkey.asave()
+    except IntegrityError:
+        return 500, f"SSH key '{data.keyname}' already exists."
+    except Exception:
+        logger.warning(f"Failed to add SSH key '{data.keyname}'", exc_info=True)
+        return 500, f"Failed to add SSH key '{data.keyname}'."
+
+    return 200, None
+
+
+@router.post('/user/sshkey/get/', response={200: Optional[list[UserSSHKeyOutSchema]], 500: str})
+async def user_sshkey_get(request, data: UserSSHKeysInSchema):
+    user = await User.objects.aget_safe(username=data.username)
+    if user is None:
+        return 500, f"User '{data.username}' not exists."
+
+    if data.keyname is None:
+        sshkeys = await sync_to_async(SSHKey.objects.filter)(user_id=user.pk)
+        if not await sshkeys.aexists():
+            return 200, None
+    else:
+        sshkeys = await SSHKey.objects.aget_safe(user_id=user.pk, keyname=data.keyname)
+        if sshkeys is None:
+            return 200, None
+
+    if isinstance(sshkeys, SSHKey):
+        try:
+            sshkeys.user = user
+        except SynchronousOnlyOperation:
+            sync_to_async(lambda s, u: setattr(s, "user", u))(sshkeys, user)
+
+        sshkeys = [sshkeys]
+    else:
+        async for key in sshkeys:
+            key.user = user
+
+    return 200, sshkeys

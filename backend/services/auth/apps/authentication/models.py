@@ -1,6 +1,7 @@
+from common.managers import BaseManager
 from django.contrib.auth.models import AbstractUser, UserManager as _UserManager
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db.models import EmailField
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
@@ -29,7 +30,7 @@ class User(AbstractUser):
 
     Username and password are required. Other fields are optional.
     """
-    email = EmailField(
+    email = models.EmailField(
         _("email address"),
         blank=True,
         unique=True,
@@ -43,3 +44,21 @@ class User(AbstractUser):
 
     class Meta(AbstractUser.Meta):
         db_table = 'auth_user'
+
+
+class SSHKeyManager(BaseManager):
+    pass
+
+
+class SSHKey(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    keyname = models.CharField(blank=False, max_length=32)
+    sshkey = models.CharField(blank=False, max_length=256)
+    fingerprint = models.TextField(blank=True, null=True)
+
+    objects = SSHKeyManager()
+
+    class Meta:
+        db_table = 'ssh_key'
+        unique_together = ('user', 'keyname')
