@@ -1,13 +1,12 @@
-import asyncio
 import asyncssh
 import logging
 import os
 
-from asyncssh import SSHClientConnection
+from asyncssh import SSHClientConnection, SSHAuthorizedKeys
 from common.ssh import get_connection_ssh, SSHClient as _SSHClient, ssh_connect
 from common.utils import parse_keys
 from typing import Optional
-from .api import get_storage
+from .api import get_sshkeys, get_storage
 from .schemas import StorageInSchema
 from .utils import parse_command
 
@@ -78,10 +77,19 @@ class SSHProxyServer(asyncssh.SSHServer):
             logger.warning(exc, exc_info=True)
 
     async def begin_auth(self, username: str):
-        path = os.path.join(AUTHORIZED_KEYS, username)
-        try:
-            self._conn.set_authorized_keys(path)
-        except OSError:
-            return False
+        status, keys = await get_sshkeys(username)
+        if status != 200:
+            raise RuntimeError(keys if isinstance(keys, str) else "")
 
+        if keys is None:
+            raise RuntimeError
+
+        authorized_keys = SSHAuthorizedKeys()
+        for key in keys:
+            try:
+                authorized_keys.load(key.sshkey)
+            except ValueError:
+                continue
+
+        self._conn._authorized_client_keys = authorized_keys
         return True
