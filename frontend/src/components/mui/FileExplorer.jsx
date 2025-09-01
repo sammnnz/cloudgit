@@ -68,7 +68,7 @@ const TreeItemContent = styled('div')(({ theme }) => ({
   '&[data-expanded]:not([data-focused], [data-selected]) .labelIcon': {
     color: theme.palette.primary.dark,
     ...theme.applyStyles('light', {
-      color: theme.palette.primary.main,
+      color: "var(--color-base-accent)",
     }),
     '&::before': {
       content: '""',
@@ -88,14 +88,14 @@ const TreeItemContent = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.primary.dark,
     color: theme.palette.primary.contrastText,
     ...theme.applyStyles('light', {
-      backgroundColor: theme.palette.primary.main,
+      backgroundColor: "var(--color-base-accent)",
     }),
   },
   '&:not([data-focused], [data-selected]):hover': {
     backgroundColor: alpha(theme.palette.primary.main, 0.1),
     color: 'white',
     ...theme.applyStyles('light', {
-      color: theme.palette.primary.main,
+      color: "var(--color-base-accent)",
     }),
   },
 }));
@@ -119,7 +119,7 @@ function TransitionComponent(props) {
 
 const TreeItemLabelText = styled(Typography)({
   color: 'inherit',
-  fontFamily: 'General Sans',
+  fontFamily: 'inherit',
   fontWeight: 500,
 });
 

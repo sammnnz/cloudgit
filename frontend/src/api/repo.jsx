@@ -69,8 +69,8 @@ export const postRepoDelete = async (username, reponame) => {
     return convertResponse(response);
 }
 
-export const postRepoDataGet = async (username, reponame, branch = 'main', path) => {
-    const response = await postRequest(url + 'repo/data/get/', { username, reponame, branch, path },
+export const postRepoDataGet = async (username, reponame, branch = 'main', dir) => {
+    const response = await postRequest(url + 'repo/data/get/', { username, reponame, branch, dir },
         {
         headers: {
             'Content-Type': 'application/json',

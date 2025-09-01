@@ -6,22 +6,12 @@ import {postRepoGet} from "@api/repo.jsx";
 import MUIShadowProvider from "@components/MUIShadowProvider.jsx";
 import AddButton from "@components/mui/AddButton.jsx"
 import addButtonCSS from "@styles/mui/add-button.module.css"
-
-const Loading = () => {
-    return (
-        <div className="no-repositories">loading...</div>
-    )
-}
+import {Loading, ServerError} from "@components/Actions.jsx";
+import actionsCSS from "@/styles/actions.module.css"
 
 const NoRepositories = () => {
     return (
-        <div className="no-repositories">No repositories yet.</div>
-    )
-}
-
-const ServerError = () => {
-    return (
-        <div className="no-repositories">Server error.</div>
+        <div className="action-data">No repositories yet.</div>  /* 'action-data' style from actionsCSS*/
     )
 }
 
@@ -90,7 +80,7 @@ const RepositoriesBlock = ({account, session}) => {
     }
 
     return (
-        <ShadowRoot onload={null} pureStyles={[repositoriesBlockCSS]} nopureStyles={[addButtonCSS]}>
+        <ShadowRoot onload={null} pureStyles={[actionsCSS, repositoriesBlockCSS]} nopureStyles={[actionsCSS, addButtonCSS]}>
             <MUIShadowProvider>
                 <div className="repositories-block">
                     <div className="container">
