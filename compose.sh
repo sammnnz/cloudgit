@@ -13,6 +13,8 @@ if [[ "$1" == "-keygen" ]]; then
   EMAIL=$CLOUDGIT_EMAIL KEY_NAME=ssh_host_ed25519_key KEY_TYPE=ed25519 KEY_PATH=./_ssh/sshproxy_host_keys ./storages/utils/keygen.sh
   EMAIL=$CLOUDGIT_EMAIL KEY_NAME=ssh_host_rsa_key KEY_TYPE=rsa KEY_PATH=./_ssh/sshproxy_host_keys ./storages/utils/keygen.sh
   EMAIL=$CLOUDGIT_EMAIL KEY_NAME=ssh_host_ecdsa_key KEY_TYPE=ecdsa KEY_PATH=./_ssh/sshproxy_host_keys ./storages/utils/keygen.sh
+
+  chmod 755 -R ./_ssh
   shift
 fi
 
