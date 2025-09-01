@@ -146,17 +146,17 @@ STORAGES = {
         },
         'path': os.getenv('STORAGE_1_PATH'),
     },
-    os.getenv('STORAGE_2_NAME'): {
-        'ssh': {
-            'host': os.getenv('STORAGE_2_HOST'),
-            'port': os.getenv('STORAGE_2_PORT'),
-            'username': os.getenv('STORAGE_2_USERNAME'),
-            'client_keys': [*parse_keys(os.getenv('STORAGE_2_CLIENT_KEY_PATH'))],
-            'encryption_algs': '+aes128-cbc,aes256-cbc',
-            'known_hosts': None
-        },
-        'path': os.getenv('STORAGE_2_PATH'),
-    }
+    # os.getenv('STORAGE_2_NAME'): {
+    #     'ssh': {
+    #         'host': os.getenv('STORAGE_2_HOST'),
+    #         'port': os.getenv('STORAGE_2_PORT'),
+    #         'username': os.getenv('STORAGE_2_USERNAME'),
+    #         'client_keys': [*parse_keys(os.getenv('STORAGE_2_CLIENT_KEY_PATH'))],
+    #         'encryption_algs': '+aes128-cbc,aes256-cbc',
+    #         'known_hosts': None
+    #     },
+    #     'path': os.getenv('STORAGE_2_PATH'),
+    # }
 }
 
 TEMPLATES = [

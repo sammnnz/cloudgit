@@ -61,7 +61,7 @@ services:
       - rabbitmq
       - frontend
       - storage_1
-      - storage_2
+#      - storage_2
       - auth
       - repo
       - sshproxy

@@ -15,6 +15,10 @@ services:
       - 127.0.0.1:8001:${REPO_PORT}
     environment:
       REMOTE_SERVER_URL: ${SCHEME}://nginx-dev:${NGINX_HTTP_PORT}
+#      STORAGE_1_HOST: host.docker.internal
+#      STORAGE_1_PORT: 2222
+#    extra_hosts:
+#      - host.docker.internal:host-gateway
   repo_db:
     ports:
       - 127.0.0.1:5429:${POSTGRES_PORT}
@@ -42,6 +46,8 @@ services:
   nginx-dev:
     image: nginx:1.29.0-alpine-slim
     container_name: nginx-dev
+    networks:
+      - cloudgit
     ports:
       - ${NGINX_EXT_HOST}:${NGINX_HTTP_EXT_PORT}:${NGINX_HTTP_PORT}
       - ${NGINX_EXT_HOST}:${NGINX_SSH_EXT_PORT}:${NGINX_SSH_PORT}
