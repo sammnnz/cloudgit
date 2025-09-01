@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useRef} from "react";
 import { useLoaderData } from "react-router";
 import Header from "@/components/Header";
 import Navbar from "@/components/welcome/Navbar";
@@ -13,10 +13,10 @@ const Welcome = () => {
 
     return (
         <div className="welcome-container">
-            <Header />
-            <Navbar isAuth={!!session?.is_authenticated}/>
-            <WelcomeBlock />
-            <Footer />
+            <Header/>
+            <Navbar session={session}/>
+            <WelcomeBlock/>
+            <Footer/>
         </div>
     );
 }

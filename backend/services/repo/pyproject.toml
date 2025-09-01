@@ -1,0 +1,42 @@
+[project]
+name = "repo"
+version = "0.1.0"
+description = "\"Service for maintaining repositories\""
+license = "Apache-2.0"
+authors = [
+    {name = "Sam Nazarov", email = "samnnazarov@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+    "django (>=5.2.4,<6.0.0)",
+    "django-cors-headers (>=4.7.0,<5.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "gunicorn[gevent] (>=23.0.0,<24.0.0)",
+    "django-enum (>=2.2.3,<3.0.0)",
+    "uvicorn (>=0.35.0,<0.36.0)",
+    "uvicorn-worker (>=0.3.0,<0.4.0)",
+    "channels (>=4.3.0,<5.0.0)",
+    "django-ninja (>=1.4.3,<2.0.0)",
+    "orjson (>=3.11.1,<4.0.0)",
+    "uvloop (>=0.21.0,<0.22.0) ; sys_platform == 'linux'",  # environment markers PEP-508
+    "aiohttp (>=3.12.15,<4.0.0)",
+    "asyncssh (>=2.21.0,<3.0.0)",
+]
+
+[project.optional-dependencies]
+postgres = [
+    "psycopg2-binary"  # poetry install --no-root --extras postgres
+]
+common = [
+    "common @ ../../common"  # poetry install --no-root --extras common
+]
+
+[tool.poetry]
+packages = [
+    {include = "common", from = "../../common/src"},  # poetry install --only-root (for dev install in editable mode without deps)
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

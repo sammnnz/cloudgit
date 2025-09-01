@@ -20,7 +20,8 @@ const SigninBlock = () => {
             errorMsg = convertResponseData(response),
             status = +response?.status;
         if (200 <= status && status < 300) {
-            window.location.href = "/dashboard";
+            let path = document.referrer;
+            window.location.href = path === "" ? "/" : path;
             return;
         }
         else if (status === 403) {
@@ -40,7 +41,7 @@ const SigninBlock = () => {
     }
 
     return (
-        <ShadowRoot onload={onShadowRootLoad} linkstyles={[signupCSS]}>
+        <ShadowRoot onload={onShadowRootLoad} pureStyles={[signupCSS]}>
             {/*<link rel="stylesheet" href="./src/styles/signup.css"/>*/}
             <div className="signup-block">
                 <div className="container">

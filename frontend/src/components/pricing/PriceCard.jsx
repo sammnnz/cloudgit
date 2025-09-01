@@ -39,7 +39,7 @@ const PriceCard = ({type, price, slide = false}) => {
     }
 
     return (
-        <ShadowRoot linkstyles={[price_cards]}>
+        <ShadowRoot pureStyles={[price_cards]}>
             {/*<link rel="stylesheet" href="./src/styles/pricing/price-card.css"/>*/}
             <div className="price-card">
                 <div className="container">

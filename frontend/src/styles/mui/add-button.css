@@ -1,0 +1,21 @@
+.MuiFab-root{
+    color: #000000;
+    background-color: #ffffff;
+    box-shadow: none !important;
+    border: 2px solid #000000;
+    transition: none !important;
+}
+
+.MuiBox-root:hover .MuiFab-root{
+    color: var(--color-base-accent);
+    background-color: #ffffff;
+    border: 2px solid var(--color-base-accent);
+}
+
+.MuiTypography-root{
+    color: #000000;
+}
+
+.MuiBox-root:hover .MuiTypography-root{
+    color: var(--color-base-accent);
+}

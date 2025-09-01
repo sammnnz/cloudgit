@@ -1,61 +1,31 @@
-import React, {useRef} from "react";
-import { ShadowRoot } from "@/components/ShadowRoot";
-import NavbarLinks from "./NavbarLinks";
-import {getSessionLogout} from "@api/auth.jsx";
-import navbarCSS from "@/styles/welcome/navbar.module.css";
-import logoVariant from "@/static/img/logo-variant.svg";
+import React from "react";
+import {Navbar as _Navbar} from "@/components/common/Navbar";
+import navbarCSS from "@/styles/account/navbar.module.css"
 
-const Navbar = ({isAuth}) => {
-    if ((isAuth instanceof Boolean))
-        isAuth = false;
-
-    const buttonRef = useRef(null);
-
-    const onClick = async () => {
-        const response = await getSessionLogout();
-        if (response) {
-            window.location.href = "/";
-        } else {
-            alert("Logout failed. Please try again.");
-            buttonRef.current.addEventListener('click', onClick, {once: true});
-        }
-    }
-
-    const onShadowLoad = () => {
-        if (buttonRef.current)
-            buttonRef.current.addEventListener('click', onClick, {once: true});
+const Navbar = ({session}) => {
+    const links = {
+        'Product': undefined,
+        'Platform': {
+            href: undefined,
+            links: {
+                'Storage': undefined,
+                'CI/CD': undefined,
+                'CLI': undefined
+            }
+        },
+        'Pricing': {
+            href: undefined,
+            links: {
+                'Free': undefined,
+                'Premium': undefined,
+                'Ultimate': undefined
+            }
+        },
+        'About': undefined,
     }
 
     return (
-        <ShadowRoot onload={onShadowLoad} linkstyles={[navbarCSS]}>
-            {/*<link rel="stylesheet" href="./src/styles/welcome/navbar.css"/>*/}
-            <div className="navbar">
-                <div className="container">
-                    <div className="logo">
-                        <img src={logoVariant} height="16px" alt=""/>
-                    </div>
-                    <div className="content">
-                        <NavbarLinks />
-                    </div>
-                    {isAuth ?
-                        <div className="buttons">
-                            <button ref={buttonRef}
-                                    className="button button-base sign-in-btn">
-                                Logout
-                            </button>
-                        </div> :
-                        <div className="buttons">
-                            <a className="button button-base sign-in-btn" href="/signin">
-                                Sign in
-                            </a>
-                            <a className="button button-accent-dark sign-up-btn" href="/signup">
-                                Sign up
-                            </a>
-                        </div>
-                    }
-                </div>
-            </div>
-        </ShadowRoot>
+        <_Navbar links={links} session={session} styles={navbarCSS}/>
     );
 }
 

@@ -2,22 +2,27 @@
 import asyncio
 import functools
 import logging
-from collections.abc import Callable
 
+from collections.abc import Callable
 from inspect import CO_ASYNC_GENERATOR, CO_COROUTINE, CO_GENERATOR
 from json import dumps, loads
+from pathlib import Path
 from types import FunctionType, MethodType, NoneType
-from typing import Any, Coroutine
+from typing import Any, Coroutine, Optional
 
 __all__ = [
     "bytes_to_json",
+    "CancelRepeat",
+    "check_path",
     "is_async",
     "is_async_generator",
     "is_generator",
+    "is_simple_stroke",
     "json_to_bytes",
     "lock",
     "record",
     "repeat",
+    "parse_keys",
     "ProxyField",
     "singleton"
 ]
@@ -58,6 +63,10 @@ class lock:
         return wrapper
 
 
+class CancelRepeat(Exception):
+    pass
+
+
 # noinspection PyPep8Naming
 class repeat:
     __slots__ = ('break_on_success', 'count', 'exceptions', 'fail_on_error', 'logs', 'timeout')
@@ -86,12 +95,14 @@ class repeat:
                 self.count = max(self.count - 1, -1)
                 try:
                     await fn(*args, **kwargs)
+                except CancelRepeat:
+                    break
                 except self.exceptions as e:
                     if self.logs:
                         LOGGER.warning(e, exc_info=True)
                 except Exception as e:
                     if self.fail_on_error:
-                        raise
+                        raise e
                     elif self.logs:
                         LOGGER.warning(e, exc_info=True)
                 else:
@@ -99,6 +110,7 @@ class repeat:
                         break
                 finally:
                     await asyncio.sleep(self.timeout)
+
         return wrapper
 
 
@@ -147,6 +159,15 @@ def bytes_to_json(b: bytes, codec: str = 'utf-8') -> dict:
     return loads(b.decode(codec))
 
 
+def check_path(path: Optional[str]) -> bool:
+    try:
+        Path(path)
+    except (ValueError, TypeError):
+        return False
+
+    return True
+
+
 def is_async(fn):
     if not isinstance(fn, (FunctionType, MethodType)):
         return False
@@ -166,6 +187,16 @@ def is_generator(fn):
         return False
 
     return not not fn.__code__.co_flags & CO_GENERATOR
+
+
+def is_simple_stroke(s: str) -> bool:
+    if not isinstance(s, str):
+        return False
+
+    if s.isspace() or not s:
+        return True
+
+    return False
 
 
 def json_to_bytes(o: dict, codec: str = 'utf-8') -> bytes:
@@ -217,6 +248,20 @@ def record(fn) -> Callable[..., Coroutine[Any, Any, Any]]:
         raise TypeError(f"'{fn}' must be a generator function or async generator function.")
 
     return wrapper
+
+
+def parse_keys(keys: str):
+    keys = keys.split(";")
+    for key in keys:
+        if is_simple_stroke(key):
+            continue
+
+        key = key.strip()
+        if not check_path(key):
+            raise TypeError("'keys' string must be in the format: 'key1; key2; ...',"
+                            "where each key points to a file with a host/client key.")
+
+        yield key
 
 
 def singleton(cls: type):

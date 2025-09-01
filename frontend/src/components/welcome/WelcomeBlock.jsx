@@ -33,7 +33,7 @@ const WelcomeBlock = () => {
     }
 
     return (
-        <ShadowRoot linkstyles={[welcomeBlockCSS, slickCSS]}>
+        <ShadowRoot pureStyles={[welcomeBlockCSS, slickCSS]}>
             {/*<link rel="stylesheet" href="./src/styles/welcome/welcome-block.css"/>*/}
             {/*<link rel="stylesheet" href="./node_modules/slick-carousel/slick/slick.css"/>*/}
             {/*<link rel="stylesheet" href="./node_modules/slick-carousel/slick/slick-theme.css"/>*/}

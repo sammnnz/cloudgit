@@ -1,17 +1,20 @@
 import React from "react";
 import { lazyLoad } from "@/common/utils";
-import { loader as WelcomeLoader } from "@/api/data/welcome";
-import { loader as SignupLoader } from "@/api/data/signup";
-import { loader as SigninLoader } from "@/api/data/signin";
-import { loader as DashboardLoader} from "@/api/data/dashboard";
-import { loader as HomeLoader } from "@/api/data/home"
+import { loader as WelcomeLoader } from "@/loaders/welcome";
+import { loader as SignupLoader } from "@/loaders/signup";
+import { loader as SigninLoader } from "@/loaders/signin";
+import { loader as HomeLoader } from "@/loaders/home";
+import { loader as AccountLoader } from "@/loaders/account";
+import { loader as RepoDataLoader } from "@loaders/repodata";
+
 
 const
     App = lazyLoad(() => import("@/components/App")),
     Welcome = lazyLoad(() => import("@/pages/Welcome")),
     Signup = lazyLoad(() => import("@/pages/Signup")),
     Signin = lazyLoad(() => import("@/pages/Signin")),
-    Dashboard = lazyLoad(() => import("@/pages/Dashboard"));
+    Account = lazyLoad(() => import("@pages/Account.jsx")),
+    RepoData = lazyLoad(() => import("@pages/RepoData.jsx"));
 const routes = [
     {
         Component: App,
@@ -32,15 +35,20 @@ const routes = [
                 loader: SigninLoader
             },
             {
-                path: "/dashboard",
-                element: <Dashboard />,
-                loader: DashboardLoader
-            },
-            {
                 path: "/home",
                 element: <Welcome />,
                 loader: HomeLoader
-            }
+            },
+            {
+                path: "/account/:username",  // ?tab=profile    ?tab=repositories    ?tab=settings
+                element: <Account />,
+                loader: AccountLoader
+            },
+            {
+                path: "/account/:username/:reponame",  // ?tab=settings    ?tab=statistics
+                element: <RepoData />,
+                loader: RepoDataLoader
+            },
         ]
     }
 ]

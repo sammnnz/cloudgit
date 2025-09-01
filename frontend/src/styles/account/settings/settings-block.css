@@ -1,0 +1,48 @@
+.settings-block {
+    width: inherit;
+}
+
+.container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: inherit;
+    padding: 20px
+}
+
+.title{
+    margin: 12px;
+}
+
+.title-danger{
+    color: var(--color-error);
+}
+
+.setting{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 0;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.setting:last-child{
+    margin-bottom: 0;
+}
+
+.sshkey-input{
+    margin: 4px 0 20px 0;
+    width: 280px;
+    height: 96px;
+}
+
+.sshkey-btn{
+
+}
+
+.sshkeys{
+    margin-top: 16px;
+}
