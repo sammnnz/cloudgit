@@ -139,7 +139,7 @@ const SignupBlock = () => {
         if (200 <= status && status < 300) {
             response = await postSessionLogin(username.value, password.value);
             if (200 <= status && status < 300) {
-                window.history.back();
+                window.location.href = "/";
                 return;
             }
 

@@ -117,6 +117,7 @@ const SettingsBlock = ({account, session}) => {
         }
 
         setLoading(null);
+        setError(null);
         setSSHKeys(keys);
     }
 
