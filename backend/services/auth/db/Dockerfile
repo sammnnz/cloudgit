@@ -21,6 +21,8 @@ WORKDIR /docker-entrypoint-initdb.d
 COPY init.sql ./init.sql
 
 RUN echo "`envsubst < ./init.sql`" > ./init.sql
+RUN chmod +x ./init.sql
+RUN chown -R postgres:postgres ./init.sql
 
 WORKDIR /
 
