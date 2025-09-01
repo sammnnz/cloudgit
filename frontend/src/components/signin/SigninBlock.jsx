@@ -20,7 +20,8 @@ const SigninBlock = () => {
             errorMsg = convertResponseData(response),
             status = +response?.status;
         if (200 <= status && status < 300) {
-            window.history.back();
+            let path = document.referrer;
+            window.location.href = path === "" ? "/" : path;
             return;
         }
         else if (status === 403) {

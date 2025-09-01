@@ -1,6 +1,6 @@
-import React from "react";
+import React, {useRef} from "react";
 import { ShadowRoot } from "@/components/ShadowRoot";
-import settingsBlockBlockCSS from "@/styles/repodata/settings/settings-block.module.css";
+import settingsBlockBlockCSS from "@/styles/account/settings/settings-block.module.css";
 import {postRepoDelete} from "@api/repo.jsx";
 
 const SettingsBlock = ({account, repo, session}) => {
@@ -11,6 +11,8 @@ const SettingsBlock = ({account, repo, session}) => {
     if (sessionUsername !== accountUsername)
         throw new Error("Access denied.");
 
+    const delButtonRef = useRef(null);
+
     const onRepoDelete = async () => {
         const response = await postRepoDelete(accountUsername, repoName),
             status = response?.status;
@@ -18,14 +20,23 @@ const SettingsBlock = ({account, repo, session}) => {
             window.location.href = "/account/" + accountUsername;
         } else {
             alert("Delete failed. Please try again.");
+            delButtonRef.current.addEventListener('click', onRepoDelete, {once: true});
         }
     }
 
+    const onShadowRootLoad = () => {
+        if (delButtonRef.current)
+            delButtonRef.current.addEventListener('click', onRepoDelete, {once: true});
+    }
+
     return (
-        <ShadowRoot pureStyles={[settingsBlockBlockCSS]}>
+        <ShadowRoot onload={onShadowRootLoad} pureStyles={[settingsBlockBlockCSS]}>
             <div className="settings-block">
                 <div className="container">
-                    <button className="button button-accent" onClick={onRepoDelete}>Delete repository</button>
+                    <h1 className="title title-danger">Danger zone</h1>
+                    <div className="setting">
+                        <button ref={delButtonRef} className="button button-base">Delete repository</button>
+                    </div>
                 </div>
             </div>
         </ShadowRoot>

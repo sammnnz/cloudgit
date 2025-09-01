@@ -91,3 +91,29 @@ export const postUserDelete = async () => {
     });
     return convertResponse(response);
 }
+
+export const postUserSSHKeyAdd = async (username, keyname, sshkey) => {
+    const response = await postRequest(url + 'user/sshkey/add/',
+        { username, keyname, sshkey },
+        {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': await getCSRFToken(),
+        },
+        withCredentials: true,
+    });
+    return convertResponse(response);
+}
+
+export const postUserSSHKeyGet = async (username, keynames = []) => {
+    const response = await postRequest(url + 'user/sshkey/get/',
+        { username, keynames },
+        {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': await getCSRFToken(),
+        },
+        withCredentials: true,
+    });
+    return convertResponse(response);
+}
