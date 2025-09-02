@@ -1,0 +1,8 @@
+.action-data{
+    display: flex;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 2em;
+    padding: 48px;
+    color: var(--color-font-notimportant);
+}

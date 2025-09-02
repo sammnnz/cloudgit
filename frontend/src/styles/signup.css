@@ -1,0 +1,51 @@
+.signup-block{
+    height: 650px;
+    background: #ffffff;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 1) 20%, var(--color-base-accent) 100%);
+    display: flex;
+    justify-content: center;
+}
+
+.container{
+    display: flex;
+    flex-direction: row;
+    height: inherit;
+}
+
+.content{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 100px;
+    width: 540px;
+}
+
+.content h1{
+    margin-bottom: 12px;
+}
+
+.signup-content{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 12px 12px;
+    width: min-content;
+}
+
+.signup-content p{
+    margin-bottom: 4px;
+}
+
+.signup-content p:last-child{
+    margin-bottom: 0;
+}
+
+.content .button{
+    margin-top: 12px;
+}
+
+.signup-btn{
+    padding: 10px 12px;
+    font-size: 14px;
+}

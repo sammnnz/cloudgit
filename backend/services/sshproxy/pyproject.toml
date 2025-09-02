@@ -1,0 +1,29 @@
+[project]
+name = "sshproxy"
+version = "0.1.0"
+description = "Service for proxying ssh connections"
+license = "Apache-2.0"
+authors = [
+    {name = "Sam Nazarov", email = "samnnazarov@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10, <3.11"
+dependencies = [
+    "aiohttp (>=3.12.15,<4.0.0)",
+    "uvloop (>=0.21.0,<0.22.0) ; sys_platform == 'linux'",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+]
+
+[project.optional-dependencies]
+common = [
+    "common @ ../../common"  # poetry install --no-root --extras common
+]
+
+[tool.poetry]
+packages = [
+    {include = "common", from = "../../common/src"},  # poetry install --only-root (for dev install in editable mode without deps)
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

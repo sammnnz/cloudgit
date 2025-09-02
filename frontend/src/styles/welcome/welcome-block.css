@@ -1,0 +1,71 @@
+.welcome-block{
+    height: 650px;
+    background: #ffffff;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 1) 20%, var(--color-base-accent) 100%);
+}
+
+.container{
+    display: flex;
+    flex-direction: row;
+    height: inherit;
+}
+
+.content{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 100px;
+    width: 540px;
+}
+
+.content span{
+    color: var(--color-base-accent);
+}
+
+.content p{
+    font-size: 1rem;
+    margin-top: 10px;
+}
+
+.signup-block{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.signup-block input{
+    margin-right: 24px;
+}
+
+.sign-up-btn{
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+.banners{
+    /*width: 100%;*/
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.slider-container{
+    width: calc(100vw - 540px);
+}
+
+.banner{
+    margin-right: 60px;
+    opacity: 70%;
+    transition: opacity 0.3s;
+}
+
+.banner:hover{
+    opacity: 100%;
+}
+
+.banner h2{
+    text-transform: uppercase;
+}

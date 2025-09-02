@@ -1,0 +1,137 @@
+:root{
+    --color-base-accent: #49A7CC;
+    --color-banner: #6bbad0;
+    --color-base-accent-dark: #000000;
+    --color-font-notimportant: #959595;
+    --color-font-active: #000000;
+    --color-font-noactive: #6A6A6A;
+    --color-error: #d51d0c;
+    --color-success: #61a813;
+}
+
+html{
+
+}
+
+body{
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #000000;
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6{
+    margin: 0;
+}
+
+a{
+    cursor: default;
+    user-select: none;
+    -webkit-user-drag: none !important;
+    text-decoration: none;
+}
+
+p{
+    margin: 0;
+}
+
+button{
+    user-select: none;
+    border: 0;
+}
+
+button:focus{
+    outline: none !important;
+}
+
+button:focus-visible{
+    outline: none !important;
+}
+
+img{
+    -webkit-user-drag: none !important;
+    user-select: none;
+}
+
+#app{
+
+}
+
+.dummy{
+    display: none !important;
+}
+
+.shadow-root{
+    height: inherit;
+}
+
+.button{
+    width: max-content;
+    height: max-content;
+    position: relative;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.button-base{
+    background: rgba(255, 255, 255, 0);
+    border: 1px solid rgba(0, 0, 0, 1) !important;
+    color: #000000;
+}
+
+.button-base:hover{
+    border: 1px solid var(--color-base-accent) !important;
+    color: var(--color-base-accent);
+}
+
+.button-accent{
+    background: var(--color-base-accent);
+    color: #ffffff;
+}
+
+.button-accent:hover{
+    background: var(--color-base-accent-dark);
+}
+
+.button-accent-dark{
+    background: var(--color-base-accent-dark);
+    color: #ffffff;
+}
+
+.button-accent-dark:hover{
+    background: var(--color-base-accent);
+}
+
+.input-default{
+    min-width: 224px;
+    height: 30px;
+    border-radius: 4px;
+    border: 1px solid #000000;
+    padding-left: 10px;
+}
+
+.input-error{
+    border: 2px solid var(--color-error) !important;
+}
+
+.input-error:focus-visible{
+    outline: var(--color-error) auto 2px !important;
+}
+
+.message-error{
+    color: var(--color-error);
+}
+
+.message-success{
+    color: var(--color-success);
+}

@@ -1,0 +1,95 @@
+.price-card{
+    width: 220px;
+    background: #ffffff;
+    border-radius: 6px;
+}
+
+.container{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.type{
+    background: #000000;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 48px;
+    border-radius: 6px;
+    width: 100%;
+}
+
+.type h1{
+    margin-bottom: 12px;
+}
+
+.type p{
+
+}
+
+.price{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: baseline;
+    width: 100%;
+    padding: 24px 48px;
+}
+
+.price h1{
+    height: 32px;
+    font-size: 32px;
+}
+
+.price h1::before{
+    content: "$";
+    position: absolute;
+    transform: translate(-10px, 0px);
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.price p{
+    margin-left: 2px;
+}
+
+.features{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 32px 48px;
+    background: var(--color-base-accent);
+    border-radius: 6px;
+    color: #ffffff;
+}
+
+.price-card:hover .features{
+    display: flex !important;
+}
+
+.price-card:hover .type p{
+    display: flex !important;
+}
+
+.features h2{
+    margin-bottom: 20px;
+}
+
+.features-content{
+
+}
+
+.features-content p{
+    margin-bottom: 10px;
+}
+
+.features-content p:last-child{
+    margin-bottom: 0;
+}

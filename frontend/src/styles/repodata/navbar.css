@@ -1,0 +1,4 @@
+.navbar{
+    background: #ffffff !important;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 1) 20%, var(--color-base-accent) 100%) !important;
+}

@@ -1,0 +1,4 @@
+include:
+  - path :
+      - ./docker-compose.yml
+      - ./compose.demo.override.yml

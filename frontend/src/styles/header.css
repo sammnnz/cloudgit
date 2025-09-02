@@ -1,0 +1,11 @@
+header{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-base-accent-dark);
+    height: 50px;
+}
+
+header .logo{
+    height: 30px;
+}
