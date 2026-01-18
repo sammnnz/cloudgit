@@ -27,7 +27,17 @@ export default defineConfig({
     },
     build: {
         outDir: "build",
-        target: "es2017",
+        target: "es2017", // TODO: Проверить, рабоатет ли с React18+, MUI 6+, иначе es2020
+        sourcemap: mode === 'development' ? true : false,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                vendor: ['react', 'react-dom', 'react-router-dom'],
+                redux: ['@reduxjs/toolkit', 'react-redux'],
+                mui: ['@mui/material', '@emotion/react', '@emotion/styled', '@mui/icons-material']
+                }
+            }
+        }
     },
     preview: {
         port: 3000

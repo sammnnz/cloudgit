@@ -1,15 +1,20 @@
 {
   "name": "cloudgit-frontend",
+  "private": true,
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write src/",
+    "prepare": "husky install"
   },
-  "type": "module",
-  "keywords": [],
+  "keywords": [
+    "Git",
+    "Cloud"
+  ],
   "author": "Sam Nazarov",
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -17,15 +22,12 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",
-    "@mui/styles": "^6.5.0",
     "@mui/x-tree-view": "^8.10.0",
     "@react-spring/web": "^10.0.1",
     "axios": "^1.9.0",
-    "jquery": "^3.7.1",
-    "jquery-ui": "^1.14.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.0",
-    "react-router": "^7.5.3",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.5.3",
     "react-shadow-root": "^6.2.0",
     "react-slick": "^0.30.3",
@@ -33,9 +35,20 @@
     "validator": "^13.15.0"
   },
   "devDependencies": {
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
     "@vitejs/plugin-legacy": "^6.1.1",
     "@vitejs/plugin-react": "^4.4.1",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "typescript": "^5.9.3",
     "vite": "^6.3.5",
-    "vite-aliases": "^0.11.8"
+    "vite-aliases": "^0.11.8",
+    "prettier": "^3.2.5",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2"
   }
 }

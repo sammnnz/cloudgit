@@ -139,3 +139,4 @@ dist
 # Custom
 build/**/*
 jsconfig.json
+.draft
