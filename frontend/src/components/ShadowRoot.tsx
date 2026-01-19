@@ -38,8 +38,17 @@ const getStyleSheets = (tables = [], pure = true) => {
     let currentTable = undefined;
     for (let styleSheet of document.styleSheets) {
         if (tables.length === length) break;
+        
+        let cssRules;
+        try {
+            cssRules = styleSheet.cssRules || styleSheet.rules;
+            if (!cssRules) continue;
+        } catch (error) {
+            console.warn('Cannot access cssRules for:', styleSheet.href, error);
+            continue;
+        }
 
-        for (let cssRule of styleSheet.cssRules) {
+        for (let cssRule of cssRules) {
             if (currentTable) {
                 if (cssRule.selectorText?.match(currentTable[startKey]))
                     throw new Error("Two equal start selectors found: " + currentTable[startKey]);
