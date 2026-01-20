@@ -1,13 +1,10 @@
-import React from "react";
 import routes from "@/router/routes";
 import { createBrowserRouter, RouterProvider } from "react-router";
 
 const router = createBrowserRouter(routes);
 
-const CoreProvider = () => {
+export const RouteProvider = () => {
     return (
-        <RouterProvider router={router}></RouterProvider>
+        <RouterProvider router={router} />
     );
 }
-
-export default CoreProvider;
