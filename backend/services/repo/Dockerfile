@@ -6,8 +6,11 @@ RUN apk add curl
 
 SHELL ["/bin/bash", "-c"]
 
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install pip-tools==7.4.1
+# RUN pip install --upgrade pip==25.1.1 setuptools==80.9.0 wheel==0.45.1
+# RUN pip install pip-tools==7.4.1
+
+RUN pip install --upgrade pip==25.1.1
+RUN pip install poetry==2.3.0
 
 ENV PATH="/root/.local/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -36,8 +39,14 @@ WORKDIR ${SERVICE_FOLDER}
 
 COPY --chown=${USERNAME}:${USERNAME} pyproject.toml README.md ./
 
-RUN pip-compile --extra common --extra postgres --output-file requirements.txt pyproject.toml
-RUN pip install -r requirements.txt
+# RUN pip-compile --extra common --extra postgres --output-file requirements.txt pyproject.toml
+# RUN pip install -r requirements.txt
+
+# Poetry variant more big
+COPY --chown=${USERNAME}:${USERNAME} pyproject.toml poetry.lock ./
+
+RUN poetry config virtualenvs.create false
+RUN poetry lock && poetry install --no-interaction --no-root --extras "postgres common"
 
 COPY --chown=${USERNAME}:${USERNAME} . ./
 
