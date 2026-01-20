@@ -23,6 +23,14 @@
     "strictNullChecks": true,
 
     "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@api/*": ["src/api/*"],
+      "@components/*": ["src/components/*"],
+      "@store/*": ["src/store/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@common/*": ["src/common/*"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
   "exclude": ["node_modules"],

@@ -26,6 +26,8 @@ export default defineConfig(({mode}) => {
             '@router': path.resolve(__dirname, './src/router'),
             '@static': path.resolve(__dirname, './src/static'),
             '@styles': path.resolve(__dirname, './src/styles'),
+            '@store': path.resolve(__dirname, './src/store'),
+            '@hooks': path.resolve(__dirname, './src/hooks'),
             }
         },
         server: {

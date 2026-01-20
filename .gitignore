@@ -4,3 +4,4 @@ db.*
 .env
 _ssh
 !example/.env
+*.code-workspace
