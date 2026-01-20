@@ -3,7 +3,7 @@ import { REMOTE_SERVER_URL } from "@/common/constants";
 
 export const url = REMOTE_SERVER_URL + '/api/auth/';
 
-export const getCSRFToken = async () => {
+export const getCSRFToken = async (): Promise<string | undefined> => {
     const response = await getRequest(url + 'session/csrf/', {
         withCredentials: true
     }),
@@ -38,7 +38,7 @@ export const getSessionLogout = async () => {
 /**
  * Return True if user exists, False if not exists and undefined when server failed.
  */
-export const getUserCheck = async (username) => {
+export const getUserCheck = async (username: string) => {
     let response = await getRequest(url + `user/check?username=${username}`, {
         withCredentials: true,
     });
@@ -50,11 +50,11 @@ export const getUserCheck = async (username) => {
     return !!response?.data;
 }
 
-export const isUserExists = async (username) => {
+export const isUserExists = async (username: string) => {
     return await getUserCheck(username);
 }
 
-export const postSessionLogin = async (username, password) => {
+export const postSessionLogin = async (username: string, password: string) => {
     const response = await postRequest(url + 'session/login/', { username, password },
         {
         headers: {
@@ -66,7 +66,7 @@ export const postSessionLogin = async (username, password) => {
     return convertResponse(response);
 }
 
-export const postUserCreate = async (username, email, password) => {
+export const postUserCreate = async (username: string, email: string, password: string) => {
     const response = await postRequest(url + 'user/create/',
         { username, email, password },
         {
@@ -92,7 +92,7 @@ export const postUserDelete = async () => {
     return convertResponse(response);
 }
 
-export const postUserSSHKeyAdd = async (username, keyname, sshkey) => {
+export const postUserSSHKeyAdd = async (username: string, keyname: string, sshkey: string) => {
     const response = await postRequest(url + 'user/sshkey/add/',
         { username, keyname, sshkey },
         {
@@ -105,7 +105,7 @@ export const postUserSSHKeyAdd = async (username, keyname, sshkey) => {
     return convertResponse(response);
 }
 
-export const postUserSSHKeyGet = async (username, keynames = []) => {
+export const postUserSSHKeyGet = async (username: string, keynames: string[] = []) => {
     const response = await postRequest(url + 'user/sshkey/get/',
         { username, keynames },
         {
@@ -116,4 +116,17 @@ export const postUserSSHKeyGet = async (username, keynames = []) => {
         withCredentials: true,
     });
     return convertResponse(response);
+}
+
+export const authAPI = {
+    getCSRFToken,
+    getSessionInfo,
+    getSessionLogout,
+    getUserCheck,
+    isUserExists,
+    postSessionLogin,
+    postUserCreate,
+    postUserDelete,
+    postUserSSHKeyAdd,
+    postUserSSHKeyGet
 }

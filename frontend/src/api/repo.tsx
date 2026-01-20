@@ -7,7 +7,7 @@ export const url = REMOTE_SERVER_URL + '/api/repo/';
 /**
  * Return True if repo exists, False if not exists and undefined when server failed.
  */
-export const getRepoCheck = async (username, reponame) => {
+export const getRepoCheck = async (username: string, reponame: string) => {
     let response = await getRequest(url + `repo/check?username=${username}&reponame=${reponame}`, {
         withCredentials: true,
     });
@@ -24,7 +24,7 @@ export const getRepoCheck = async (username, reponame) => {
  * @param reponame If null, return all user's repositories
  * @param access Only with `reponame=null`. If null, return all (private and public) repositories
  */
-export const postRepoGet = async (username, reponame = null, access = null) => {
+export const postRepoGet = async (username: string, reponame: string | null = null, access: "private" | "public" | null = null) => {
     if (typeof reponame !== "string")
         reponame = null;
 
@@ -45,7 +45,7 @@ export const postRepoGet = async (username, reponame = null, access = null) => {
     return convertResponse(response);
 }
 
-export const postRepoCreate = async (username, reponame, access, description) => {
+export const postRepoCreate = async (username: string, reponame: string, access: "private" | "public", description: string) => {
     const response = await postRequest(url + 'repo/create/', { username, reponame, access, description },
         {
         headers: {
@@ -57,7 +57,7 @@ export const postRepoCreate = async (username, reponame, access, description) =>
     return convertResponse(response);
 }
 
-export const postRepoDelete = async (username, reponame) => {
+export const postRepoDelete = async (username: string, reponame: string) => {
     const response = await postRequest(url + 'repo/delete/', { username, reponame },
         {
         headers: {
@@ -69,7 +69,10 @@ export const postRepoDelete = async (username, reponame) => {
     return convertResponse(response);
 }
 
-export const postRepoDataGet = async (username, reponame, branch = 'main', dir) => {
+export const postRepoDataGet = async (username: string, reponame: string, branch = 'main', dir?: string) => {
+    if (!dir)
+        dir = ""
+
     const response = await postRequest(url + 'repo/data/get/', { username, reponame, branch, dir },
         {
         headers: {
