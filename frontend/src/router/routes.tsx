@@ -1,11 +1,10 @@
-import React from "react";
 import { lazyLoad } from "@/common/utils";
 import { loader as WelcomeLoader } from "@/loaders/welcome";
 import { loader as SignupLoader } from "@/loaders/signup";
 import { loader as SigninLoader } from "@/loaders/signin";
 import { loader as HomeLoader } from "@/loaders/home";
 import { loader as AccountLoader } from "@/loaders/account";
-import { loader as RepoDataLoader } from "@loaders/repodata";
+import { loader as RepoDataLoader } from "@/loaders/repodata";
 
 
 const
@@ -13,8 +12,8 @@ const
     Welcome = lazyLoad(() => import("@/pages/Welcome")),
     Signup = lazyLoad(() => import("@/pages/Signup")),
     Signin = lazyLoad(() => import("@/pages/Signin")),
-    Account = lazyLoad(() => import("@pages/Account.jsx")),
-    RepoData = lazyLoad(() => import("@pages/RepoData.jsx"));
+    Account = lazyLoad(() => import("@/pages/Account.jsx")),
+    RepoData = lazyLoad(() => import("@/pages/RepoData.jsx"));
 const routes = [
     {
         Component: App,

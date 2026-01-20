@@ -1,4 +1,3 @@
-import React from "react";
 import {getSessionInfo, getUserCheck} from "@api/auth.jsx";
 import {parsePathName} from "@common/utils.jsx";
 

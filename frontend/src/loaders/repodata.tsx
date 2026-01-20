@@ -1,4 +1,3 @@
-import React from "react";
 import {getSessionInfo} from "@api/auth.jsx";
 import {parsePathName} from "@common/utils.jsx";
 import {postRepoGet} from "@api/repo.jsx";

@@ -1,4 +1,3 @@
-import React from "react";
 import {getSessionInfo} from "@api/auth.jsx";
 
 export const loader = async () => {
