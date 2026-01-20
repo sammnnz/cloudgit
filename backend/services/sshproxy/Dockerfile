@@ -2,11 +2,15 @@ FROM python:3.10-alpine
 
 RUN apk update
 RUN apk add bash
+RUN apk add curl
 
 SHELL ["/bin/bash", "-c"]
 
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install pip-tools==7.4.1
+# RUN pip install --upgrade pip==25.1.1 setuptools==80.9.0 wheel==0.45.1
+# RUN pip install pip-tools==7.4.1
+
+RUN pip install --upgrade pip==25.1.1
+RUN pip install poetry==2.3.0
 
 ENV PATH="/root/.local/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -36,10 +40,15 @@ COPY --from=common --chown=${USERNAME}:${USERNAME} . ./
 
 WORKDIR ${SERVICE_FOLDER}
 
-COPY --chown=${USERNAME}:${USERNAME} pyproject.toml README.md ./
+# COPY --chown=${USERNAME}:${USERNAME} pyproject.toml README.md ./
 
-RUN pip-compile --extra common --output-file requirements.txt pyproject.toml
-RUN pip install -r requirements.txt
+# RUN pip-compile --extra common --output-file requirements.txt pyproject.toml
+# RUN pip install -r requirements.txt
+
+COPY --chown=${USERNAME}:${USERNAME} pyproject.toml poetry.lock ./
+
+RUN poetry config virtualenvs.create false
+RUN poetry lock && poetry install --no-interaction --no-root --extras "common"
 
 COPY --chown=${USERNAME}:${USERNAME} . ./
 
