@@ -105,7 +105,7 @@ export const ShadowRoot = ({ children, onload, nopureStyles, pureStyles, stylesh
         const params = [...args];
         if (img.current) {
             params.push(img.current.parentNode);
-            img.current.remove();
+            // img.current.remove();
         }
 
         if (onload instanceof Function)
