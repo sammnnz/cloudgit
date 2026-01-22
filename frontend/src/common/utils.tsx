@@ -1,14 +1,25 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosHeaders, AxiosInstance, AxiosResponse } from "axios";
 import { ComponentType, lazy, Suspense } from "react";
 import Loading from "@/components/Loading";
 import { DEBUG, REMOTE_SERVER_URL } from "@/common/constants";
-import { ApiResponse, UResponse, WrapResponse } from "@/common/types";
+import { AResponse, UResponse, WResponse } from "@/common/types";
 
 export const convertAPIResponse = <T = unknown, D = any>(
-    response: ApiResponse<T, D>
+    response: AResponse<T, D>
 ): UResponse<T, D> => {
-    if (response instanceof AxiosError)
-        return response.response // may be undefined
+    if (response instanceof AxiosError){
+        const error = response;
+        return {
+            data: error.response?.data ?? ("" as T),
+            status: error.response?.status ?? 0,
+            statusText: error.response?.statusText ?? "",
+            headers: error.response?.headers ?? {},
+            config: error.config ?? {headers: new AxiosHeaders()},
+            request: error.request,
+            message: error.message ?? "",
+            code: error.code
+        } as UResponse<T, D>;
+    }
 
     return {
         data: response.data,
@@ -17,7 +28,9 @@ export const convertAPIResponse = <T = unknown, D = any>(
         headers: response.headers,
         config: response.config,
         request: response.request,
-    } as AxiosResponse<T, D>;
+        message: "",
+        code: undefined
+    } as UResponse<T, D>;
 }
 
 export const apiClient: AxiosInstance = axios.create({
@@ -30,13 +43,13 @@ export const apiClient: AxiosInstance = axios.create({
 
 // Error handler
 apiClient.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse) => {
     if (DEBUG)
         console.log(response);
 
-    return response
+    return convertAPIResponse(response)
   },
-  (error) => {
+  (error: AxiosError) => {
     if (DEBUG)
         console.warn(error);
 
@@ -45,41 +58,28 @@ apiClient.interceptors.response.use(
 )
 
 export async function apiRequest<T = unknown, D = any>(
-    request: () => Promise<UResponse<T, D>>
-): Promise<WrapResponse<T, D>> {
+    request: () => Promise<AResponse<T, D>>
+): Promise<WResponse<T, D>> {
     return await request()
     .then(response => {
         return {
             ...response,
             success: true,
-        } as AxiosResponse<T, D> & { success: boolean };
+        } as WResponse<T, D>;
     })
     .catch(error => {
-        if (!error){
-            return {
-                success: true
-            } as { success: boolean };
-        }
-
         return {
             ...error,
             success: false,
-        } as AxiosResponse<T, D> & { success: boolean };
+        } as WResponse<T, D>;
     })
 }
 
 export const getResponseData = <T = unknown, D = any>(
-    response: WrapResponse<T, D>
+    response: UResponse<T, D> | WResponse<T, D>
 ): undefined | string | T => {
-    if (!response)
-        return undefined
-
-    const data = 'data' in response ? response.data : undefined;
+    const data = response.data;
     switch(typeof data) {
-        case "undefined":
-            return
-        case "string":
-            return data
         case "object":
             if (data !== null && 'detail' in data) {
                 const detail = data.detail;
@@ -93,10 +93,10 @@ export const getResponseData = <T = unknown, D = any>(
 
             if (data === null)
                 return
-
-            return data
+            
+            break
         default:
-            return
+            return data
     }
 }
 
@@ -146,6 +146,9 @@ export const parsePathName = (start: string = "", index: number = 0) => {
     }
 }
 
+/**
+ * @deprecated 
+ */
 export const showServerMessage = (
     response = undefined,
     msg = undefined,

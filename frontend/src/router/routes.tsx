@@ -12,8 +12,8 @@ const
     Welcome = lazyLoad(() => import("@/pages/Welcome")),
     Signup = lazyLoad(() => import("@/pages/Signup")),
     Signin = lazyLoad(() => import("@/pages/Signin")),
-    Account = lazyLoad(() => import("@/pages/Account.jsx")),
-    RepoData = lazyLoad(() => import("@/pages/RepoData.jsx"));
+    Account = lazyLoad(() => import("@/pages/Account")),
+    RepoData = lazyLoad(() => import("@/pages/RepoData"));
 const routes = [
     {
         Component: App,

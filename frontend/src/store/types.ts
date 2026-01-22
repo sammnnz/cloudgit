@@ -7,7 +7,7 @@ import { ThunkAction, Action, Dispatch } from '@reduxjs/toolkit';
 
 // Пользователь в системе
 export interface AuthUser {
-    id?: number;
+    id?: string;
     is_authenticated: boolean;
     username?: string;
 }

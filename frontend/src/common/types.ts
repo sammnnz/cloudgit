@@ -1,11 +1,18 @@
 import { AxiosError, AxiosResponse } from 'axios';
 
-export type ApiResponse<T = unknown, D = any, H = {}> = 
+/**
+ * General Axios Response (AxiosError or AxiosResponse)
+ */
+export type AResponse<T = unknown, D = any, H = {}> = 
     | AxiosResponse<T, D, H> 
     | AxiosError<T, D>;
 
-export type UResponse<T = unknown, D = any> = 
-    | AxiosResponse<T, D>
-    | undefined;
+/**
+ * Concatenate of AxiosError and AxiosResponse
+ */
+export type UResponse<T = unknown, D = any> = AxiosResponse<T, D> & Omit<AxiosError<T, D>, 'response'>
 
-export type WrapResponse<T = unknown, D = any> = UResponse<T, D> & { success: boolean } | { success: boolean }
+/**
+ * Wrap of `UResponse` with 'success' field
+ */
+export type WResponse<T = unknown, D = any> = UResponse<T, D> & { success: boolean }

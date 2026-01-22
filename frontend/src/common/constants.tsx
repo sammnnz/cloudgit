@@ -1,5 +1,5 @@
 // This file contains constants used throughout the application
-const stringToBoolean = (str) => {
+const stringToBoolean = (str: string) => {
     str = str.trim();
     return !(str === 'false' || str === '');
 }

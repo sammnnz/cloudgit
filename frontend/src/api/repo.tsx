@@ -1,6 +1,6 @@
 import { apiClient, apiRequest, getResponseData } from "@/common/utils";
 import { getCSRFToken } from "@/api/auth";
-import { WrapResponse } from "@/common/types";
+import { WResponse } from "@/common/types";
 
 export const url = '/api/repo';
 
@@ -30,7 +30,7 @@ export const postRepoGet = async <T = unknown, D = any>(
     username: string, 
     reponame: string | null = null, 
     access: "private" | "public" | null = null
-): Promise<WrapResponse<T, D>> => {
+): Promise<WResponse<T, D>> => {
     if (typeof reponame !== "string")
         reponame = null;
 
@@ -56,7 +56,7 @@ export const postRepoCreate = async <T = unknown, D = any>(
     username: string, 
     reponame: string, 
     access: "private" | "public", description: string
-): Promise<WrapResponse<T, D>> => {
+): Promise<WResponse<T, D>> => {
     const token = await getCSRFToken()
         , response = await apiRequest(() => apiClient.post(url + '/repo/create/', { username, reponame, access, description },
         {
@@ -72,7 +72,7 @@ export const postRepoCreate = async <T = unknown, D = any>(
 export const postRepoDelete = async <T = unknown, D = any>(
     username: string, 
     reponame: string
-): Promise<WrapResponse<T, D>> => {
+): Promise<WResponse<T, D>> => {
     const token = await getCSRFToken()
         , response = await apiRequest(() => apiClient.post(url + '/repo/delete/', { username, reponame },
         {
@@ -90,7 +90,7 @@ export const postRepoDataGet = async <T = unknown, D = any>(
     reponame: string, 
     branch = 'main', 
     dir?: string
-): Promise<WrapResponse<T, D>>=> {
+): Promise<WResponse<T, D>>=> {
     if (!dir)
         dir = ""
 

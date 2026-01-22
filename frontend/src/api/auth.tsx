@@ -1,5 +1,5 @@
 import { apiRequest, apiClient, getResponseData } from "@/common/utils";
-import { WrapResponse } from "@/common/types";
+import { WResponse } from "@/common/types";
 import { SessionInfo } from "./types";
 
 export const url = '/api/auth';
@@ -7,9 +7,8 @@ export const url = '/api/auth';
 export const getCSRFToken = async (): Promise<string | undefined> => {
     const response = await apiRequest(() => apiClient.get(url + '/session/csrf/', {
         withCredentials: true
-    })),
-        // TODO: check get
-        token = 'headers' in response && !response.headers ? response.headers.get('X-CSRF-Token') : undefined;
+    }))
+        , token = response.headers.get?.('X-CSRF-Token');
     if (! token) {
         console.warn("X-CSRF-Token was not received.");
         return undefined;
@@ -30,7 +29,7 @@ export const getSessionInfo = async (options = {}): Promise<SessionInfo> => {
     return result;
 }
 
-export const getSessionLogout = async (): Promise<WrapResponse> => {
+export const getSessionLogout = async (): Promise<WResponse> => {
     const response = await apiRequest(() => apiClient.get(url + '/session/logout/', {
         withCredentials: true
     }));
@@ -54,7 +53,7 @@ export const isUserExists = async (username: string): Promise<boolean | undefine
     return await getUserCheck(username);
 }
 
-export const postSessionLogin = async (username: string, password: string): Promise<WrapResponse> => {
+export const postSessionLogin = async (username: string, password: string): Promise<WResponse> => {
     const token = await getCSRFToken()
         , response = await apiRequest(() => apiClient.post(url + '/session/login/', { username, password },
         {
@@ -67,7 +66,7 @@ export const postSessionLogin = async (username: string, password: string): Prom
     return response;
 }
 
-export const postUserCreate = async (username: string, email: string, password: string): Promise<WrapResponse> => {
+export const postUserCreate = async (username: string, email: string, password: string): Promise<WResponse> => {
     const token = await getCSRFToken()
         , response = await apiRequest(() => apiClient.post(url + '/user/create/',
         { username, email, password },
@@ -81,7 +80,7 @@ export const postUserCreate = async (username: string, email: string, password: 
     return response;
 }
 
-export const postUserDelete = async (): Promise<WrapResponse> => {
+export const postUserDelete = async (): Promise<WResponse> => {
     const token = await getCSRFToken()
         , response = await apiRequest(() => apiClient.post(url + '/user/delete/',
         {},
@@ -95,7 +94,7 @@ export const postUserDelete = async (): Promise<WrapResponse> => {
     return response;
 }
 
-export const postUserSSHKeyAdd = async (username: string, keyname: string, sshkey: string): Promise<WrapResponse> => {
+export const postUserSSHKeyAdd = async (username: string, keyname: string, sshkey: string): Promise<WResponse> => {
     const token = await getCSRFToken()
         , response = await apiRequest(() => apiClient.post(url + '/user/sshkey/add/',
         { username, keyname, sshkey },
@@ -109,7 +108,7 @@ export const postUserSSHKeyAdd = async (username: string, keyname: string, sshke
     return response;
 }
 
-export const postUserSSHKeyGet = async (username: string, keynames: string[] = []): Promise<WrapResponse> => {
+export const postUserSSHKeyGet = async (username: string, keynames: string[] = []): Promise<WResponse> => {
     const token = await getCSRFToken()
         , response = await apiRequest(() => apiClient.post(url + '/user/sshkey/get/',
         { username, keynames },

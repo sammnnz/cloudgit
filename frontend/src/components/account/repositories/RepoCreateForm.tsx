@@ -1,11 +1,11 @@
 import React, {useRef} from "react";
 import {ShadowRoot} from "@/components/ShadowRoot";
 import repoCreateFormCSS from "@/styles/account/repositories/repo-create-form.module.css"
-import AutoResizeInput from "@components/common/AutoResizeInput.jsx";
+import AutoResizeInput from "@components/common/AutoResizeInput";
 import ReactShadowRoot from "react-shadow-root";
 import {postRepoCreate} from "@api/repo.jsx";
 import {useParams} from "react-router";
-import {convertResponseData, showServerMessage} from "@common/utils.jsx";
+import {getResponseData, showServerMessage} from "@common/utils";
 
 const RepoCreateForm = ({lock = false,
                          access = 'public',
@@ -60,7 +60,7 @@ const RepoCreateForm = ({lock = false,
         console.log(username, repoName, repoAccess, repoDescription);
         const response = await postRepoCreate(username, repoName, repoAccess, repoDescription),
             codeErrors = [404, 422],
-            errorMsg = convertResponseData(response),
+            errorMsg = getResponseData(response),
             status = +response?.status;
 
         if (200 <= status && status < 300) {
