@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
-import { lazy, Suspense } from "react";
+import { ComponentType, lazy, Suspense } from "react";
 import Loading from "@/components/Loading";
 import { DEBUG, REMOTE_SERVER_URL } from "@/common/constants";
 import { ApiResponse, UResponse, WrapResponse } from "@/common/types";
@@ -110,16 +110,15 @@ export const isUsernameValid = (username: string) => {
     return re.test(username);
 }
 
-// TODO: add annotation
 export const lazyLoad = (
-    factory
-) => {
+    factory: () => Promise<{default: ComponentType<any>;}>
+) => () => {
     const Component = lazy(factory);
     return (
-        <Suspense fallback={<Loading />}>
-            <Component />
-        </Suspense>
-    );
+    <Suspense fallback={<Loading />}>
+      <Component />
+    </Suspense>
+  );
 }
 
 export const parsePathName = (start: string = "", index: number = 0) => {
@@ -138,7 +137,7 @@ export const parsePathName = (start: string = "", index: number = 0) => {
             continue;
 
         if (index < 0 && !afterIndex)
-            index = path.length + index - i;
+            index = path.length + index - +i;
 
         if (index === afterIndex)
             return p;
@@ -159,39 +158,4 @@ export const showServerMessage = (
             alert(msg);
         else
             alert("Sorry, some problem with server. Please try again later.");
-}
-
-/**
- * @description TODO: remove
- * @deprecated
- */
-export const getRequest = async (url: string, options = {}) => {
-    return await axios.get(url, options)
-    .then(response => {
-        console.log('GET-request successful.', DEBUG ? response : '');
-        return convertAPIResponse(response);
-    })
-    .catch(error => {
-        console.warn('GET-request failed.', DEBUG ? error : error.message);
-        // Convert the error to our typed ApiResponse
-        return convertAPIResponse(error);
-    });
-}
-
-/**
- * @description TODO: remove
- * @deprecated
- */
-export const postRequest = async (url, data, options = {}) => {
-    return await axios.post(url, data, options)
-    .then(response => {
-        console.log('POST-request successful.', DEBUG ? response : '');
-        // Convert the raw axios response to our typed ApiResponse
-        return convertAPIResponse(response);
-    })
-    .catch(error => {
-        console.warn('POST-request failed.', DEBUG ? error : error.message);
-        // Convert the error to our typed ApiResponse
-        return convertAPIResponse(error);
-    });
 }
