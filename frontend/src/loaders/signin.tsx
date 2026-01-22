@@ -1,4 +1,4 @@
-import {getSessionInfo} from "@api/auth.jsx";
+import {getSessionInfo} from "@/api/auth";
 
 export const loader = async () => {
     const session = await getSessionInfo({timeout: 20000});

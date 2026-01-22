@@ -1,6 +1,6 @@
-import {getSessionInfo} from "@api/auth.jsx";
-import {parsePathName} from "@common/utils.jsx";
-import {postRepoGet} from "@api/repo.jsx";
+import {getSessionInfo} from "@/api/auth";
+import {parsePathName} from "@/common/utils";
+import {postRepoGet} from "@/api/repo";
 
 export const loader = async () => {
     const username = parsePathName("account", 1),

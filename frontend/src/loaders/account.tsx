@@ -1,5 +1,5 @@
-import {getSessionInfo, getUserCheck} from "@api/auth.jsx";
-import {parsePathName} from "@common/utils.jsx";
+import {getSessionInfo, getUserCheck} from "@/api/auth";
+import {parsePathName} from "@/common/utils";
 
 export const loader = async () => {
     const username = parsePathName("account", 1),
