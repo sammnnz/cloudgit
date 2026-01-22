@@ -94,7 +94,7 @@ export const getResponseData = <T = unknown, D = any>(
             if (data === null)
                 return
             
-            break
+            return data
         default:
             return data
     }
