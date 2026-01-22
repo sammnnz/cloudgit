@@ -1,7 +1,8 @@
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { checkAuthSession, loginUser, registerUser, logout, fetchCSRFToken } from '@/store/slices/authSlice';
+import { getSession, login as loginSession, createUser, logout as logoutSession } from '@/store/slices/authSlice';
 import { useEffect } from 'react';
-import type { AuthUser, ApiResponse } from '@/store/types';
+import type { AuthUser } from '@/store/types';
+import { WResponse } from '@/common/types';
 
 // ============================================================================
 // RETURN TYPE FOR useAuth HOOK
@@ -13,8 +14,8 @@ export interface UseAuthReturn {
   isLoading: boolean;
   error: string | null;
   csrfToken?: string;
-  login: (username: string, password: string) => Promise<ApiResponse>;
-  register: (username: string, email: string, password: string) => Promise<ApiResponse>;
+  login: (username: string, password: string) => Promise<WResponse>;
+  register: (username: string, email: string, password: string) => Promise<WResponse>;
   logout: () => void;
 }
 
@@ -28,15 +29,15 @@ export interface UseAuthReturn {
  * @example
  * const { user, isAuthenticated, isLoading, error, login, logout } = useAuth();
  * 
- * // Проверка авторизации
+ * // Check session
  * if (isAuthenticated) {
  *   console.log(`Hello, ${user.username}!`);
  * }
  * 
- * // Вход в систему
+ * // Login
  * await login('admin', 'password123');
  * 
- * // Выход
+ * // Logout
  * logout();
  */
 export const useAuth = (): UseAuthReturn => {
@@ -44,33 +45,31 @@ export const useAuth = (): UseAuthReturn => {
   const auth = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // При первом mount компонента проверяем сессию
-    dispatch(checkAuthSession());
+    dispatch(getSession());
   }, [dispatch]);
 
   /**
-   * Вход в систему
+   * Login
    */
-  const login = async (username: string, password: string): Promise<ApiResponse> => {
-    const result = await dispatch(loginUser({ username, password })).unwrap();
-    // После логина обновляем CSRF token
-    await dispatch(fetchCSRFToken());
+  const login = async (username: string, password: string): Promise<WResponse> => {
+    const result = await dispatch(loginSession({ username, password })).unwrap();
+    // await dispatch(fetchCSRFToken());
     return result;
   };
 
   /**
-   * Регистрация пользователя
+   * Sign up
    */
-  const register = async (username: string, email: string, password: string): Promise<ApiResponse> => {
-    return await dispatch(registerUser({ username, email, password })).unwrap();
+  const register = async (username: string, email: string, password: string): Promise<WResponse> => {
+    return await dispatch(createUser({ username, email, password })).unwrap();
   };
 
   /**
-   * Выход из системы
+   * Logout
    */
-  const logoutUser = () => {
-    dispatch(logout());
-    // Очищаем localStorage
+  const logout = () => {
+    dispatch(logoutSession());
+    // Clean localStorage
     localStorage.removeItem('user');
     localStorage.removeItem('csrf_token');
   };
@@ -84,6 +83,6 @@ export const useAuth = (): UseAuthReturn => {
     csrfToken: auth.csrfToken,
     login,
     register,
-    logout: logoutUser,
+    logout
   };
 };

@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux';
-import type { NestedProperty, RootState, AppDispatch, UseAppDispatch, UseAppSelector } from './types';
+import type { NestedProperty, RootState, AppDispatch, UseAppDispatch, UseAppSelector, AppThunk } from './types';
 
 // ============================================================================
 // КАСТОМНЫЕ ХУКИ ДЛЯ REDUX
