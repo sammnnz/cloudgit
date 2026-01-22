@@ -1,7 +1,7 @@
 import { useLoaderData } from "react-router";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SigninBlockRedux from "@/components/signin/SigninBlockRedux";
+import SigninBlock from "@/components/signin/SigninBlock";
 import {showServerMessage} from "@common/utils.jsx";
 
 const SignIn = () => {
@@ -12,7 +12,7 @@ const SignIn = () => {
     return (
         <div className="signin-container">
             <Header />
-            <SigninBlockRedux />
+            <SigninBlock />
             <Footer />
         </div>
     );
