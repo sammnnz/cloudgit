@@ -1,7 +1,8 @@
 import { authAPI } from './auth'
+import { repoAPI } from './repo'
 
 // Группировка API
 export const API = {
   auth: authAPI,
-  // Другие API модули будут добавляться здесь
+  repo: repoAPI,
 }
