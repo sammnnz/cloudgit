@@ -2,13 +2,13 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
 import { lazy, Suspense } from "react";
 import Loading from "@/components/Loading";
 import { DEBUG, REMOTE_SERVER_URL } from "@/common/constants";
-import { ApiResponse, Response } from "@/common/types";
+import { ApiResponse, UResponse, WrapResponse } from "@/common/types";
 
 export const convertAPIResponse = <T = unknown, D = any>(
     response: ApiResponse<T, D>
-): Response<T, D> => {
+): UResponse<T, D> => {
     if (response instanceof AxiosError)
-        return response.response
+        return response.response // may be undefined
 
     return {
         data: response.data,
@@ -18,34 +18,6 @@ export const convertAPIResponse = <T = unknown, D = any>(
         config: response.config,
         request: response.request,
     } as AxiosResponse<T, D>;
-}
-
-export const convertResponseData = <T = unknown, D = any>(
-    response: Response<T, D>
-) => {
-    if (!response)
-        return undefined
-
-    const data = response.data;
-    switch(typeof data) {
-        case "undefined":
-            return
-        case "string":
-            return data
-        case "object":
-            if (data !== null && 'detail' in data) {
-                const detail = data.detail;
-
-                if (typeof detail === "string")
-                    return detail
-
-                if (detail instanceof Array && detail.length && typeof detail[0] === "object")
-                    return detail[0].msg
-            }
-            return data
-        default:
-            return
-    }
 }
 
 export const apiClient: AxiosInstance = axios.create({
@@ -73,21 +45,59 @@ apiClient.interceptors.response.use(
 )
 
 export async function apiRequest<T = unknown, D = any>(
-    request: () => Promise<Response<T, D>>
-): Promise<Response<T, D> & { success: boolean }> {
+    request: () => Promise<UResponse<T, D>>
+): Promise<WrapResponse<T, D>> {
     return await request()
     .then(response => {
-            return {
+        return {
             ...response,
             success: true,
-        } as Response<T, D> & { success: boolean };
+        } as AxiosResponse<T, D> & { success: boolean };
     })
     .catch(error => {
+        if (!error){
+            return {
+                success: true
+            } as { success: boolean };
+        }
+
         return {
             ...error,
             success: false,
-        } as Response<T, D> & { success: boolean };
+        } as AxiosResponse<T, D> & { success: boolean };
     })
+}
+
+export const getResponseData = <T = unknown, D = any>(
+    response: WrapResponse<T, D>
+): undefined | string | T => {
+    if (!response)
+        return undefined
+
+    const data = 'data' in response ? response.data : undefined;
+    switch(typeof data) {
+        case "undefined":
+            return
+        case "string":
+            return data
+        case "object":
+            if (data !== null && 'detail' in data) {
+                const detail = data.detail;
+
+                if (typeof detail === "string")
+                    return detail
+
+                if (detail instanceof Array && detail.length && typeof detail[0] === "object")
+                    return detail[0].msg as string
+            }
+
+            if (data === null)
+                return
+
+            return data
+        default:
+            return
+    }
 }
 
 export const isEmailValid = (email: string) => {
@@ -100,16 +110,19 @@ export const isUsernameValid = (username: string) => {
     return re.test(username);
 }
 
-export const lazyLoad = (factory) => () => {
+// TODO: add annotation
+export const lazyLoad = (
+    factory
+) => {
     const Component = lazy(factory);
-  return (
-    <Suspense fallback={<Loading />}>
-      <Component />
-    </Suspense>
-  );
+    return (
+        <Suspense fallback={<Loading />}>
+            <Component />
+        </Suspense>
+    );
 }
 
-export const parsePathName = (start = "", index = 0) => {
+export const parsePathName = (start: string = "", index: number = 0) => {
     if (typeof start !== "string")
         start = ""
 
