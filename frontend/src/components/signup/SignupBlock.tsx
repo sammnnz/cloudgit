@@ -1,6 +1,6 @@
 import React, {useRef, useState} from "react";
 import { ShadowRoot } from "@/components/ShadowRoot";
-import {convertResponseData, isEmailValid, isUsernameValid, showServerMessage} from "@common/utils";
+import {getResponseData, isEmailValid, isUsernameValid, showServerMessage} from "@common/utils";
 import validator from "validator/es";
 import {isUserExists, postSessionLogin, postUserCreate} from "@/api/auth";
 import signupCSS from "@/styles/signup.module.css";
@@ -133,7 +133,7 @@ const SignupBlock = () => {
             username.value, email.value, password.value
         ),
             codeErrors = [404, 422],
-            errorMsg = convertResponseData(response),
+            errorMsg = getResponseData(response),
             status = +response?.status;
 
         if (200 <= status && status < 300) {
