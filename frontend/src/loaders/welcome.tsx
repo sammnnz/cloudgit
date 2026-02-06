@@ -1,9 +1,15 @@
-import { getSessionInfo } from "@/api/auth";
+import { store } from "@/store"
+import { getSession } from "@/store/slices/authSlice";
 
 export const loader = async () => {
-    const session = await getSessionInfo({timeout: 20000});
-    if (session.is_authenticated)
-        window.location.href = `/account/${session.username}`;
-    else
-        return { session };
+    const { auth } = store.getState();
+    if (auth.user?.is_authenticated)
+        window.location.href = `/account/${auth.user.username}`;
+
+    try {
+        const session = await store.dispatch(getSession()).unwrap();
+        if (auth.user.is_authenticated)
+            window.location.href = `/account/${auth.user.username}`
+    } catch {}
+
 }
