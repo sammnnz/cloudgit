@@ -1,168 +1,129 @@
-import React, {useRef, useState} from "react";
+import {ChangeEvent, useState} from "react";
+import { useNavigate } from "react-router";
 import { ShadowRoot } from "@/components/ShadowRoot";
-import {getResponseData, isEmailValid, isUsernameValid, showServerMessage} from "@common/utils";
-import validator from "validator/es";
-import {isUserExists, postSessionLogin, postUserCreate} from "@/api/auth";
+import {isEmailValid, isUsernameValid, passwordParams} from "@common/utils";
+import {isUserExists} from "@/api/auth";
+import { useAuth } from "@/hooks";
 import signupCSS from "@/styles/signup.module.css";
+import validator from "validator/es";
 
 const SignupBlock = () => {
-    const
-        urlParams = new URLSearchParams(window.location.search),
-        passwordParams = {
-            minLength: 8,
-            minLowercase: 1,
-            minUppercase: 1,
-            minNumbers: 1,
-            minSymbols: 1
-        };
-    const
-        buttonRef = useRef(null),
-        [email, setEmail] = useState(urlParams.get("email") || ""),
-        [emailMessage, setEmailMessage] = useState(""),
-        [password, setPassword] = useState(""),
-        [passwordMessage, setPasswordMessage] = useState(""),
-        [timer, setTimer] = useState(0),
-        [username, setUsername] = useState(""),
-        [usernameMessage, setUsernameMessage] = useState("");
+    const navigate = useNavigate();
+    const { login, register, isLoading, error } = useAuth();
+
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const [email, setEmail] = useState(urlParams.get("email") || "");
+    const [emailMessage, setEmailMessage] = useState("");
+    const [password, setPassword] = useState("");
+    const [passwordMessage, setPasswordMessage] = useState("");
+    const [username, setUsername] = useState("");
+    const [usernameMessage, setUsernameMessage] = useState("");
+    const [serverError, setServerError] = useState("");
+    const [timer, setTimer] = useState(0);
 
     const clearTimer = () => {
         clearTimeout(timer);
         setTimer(0);
     }
 
-    const updateTimer = (e) => {
+    const updateTimer = (e: React.ChangeEvent<HTMLInputElement>) => {
         clearTimeout(timer);
-        setTimer(setTimeout(async (username) => {
-            if (! isUsernameValid(username)) {
+        setTimer(setTimeout(async (username: string) => {
+            if (!isUsernameValid(username)) {
                 setUsernameMessage("Invalid username. " +
                     "Use any letters of the English alphabet " +
                     "(upper and lower case), numbers (0-9), " +
-                    "and the underscore (_).");
-                e.target.classList.add("input-error");
+                    "and the underscore (_)");
                 return;
-            } else {
-                setUsernameMessage("");
-                e.target.classList.remove("input-error");
             }
 
-            const isExists = await isUserExists(username);
-            if (isExists === undefined) {
-                setUsernameMessage("Server problem.");
-                e.target.classList.add("input-error");
-            }
-            else if (isExists) {
-                setUsernameMessage("Username is already exists.");
-                e.target.classList.add("input-error");
-            }
-            else {
-                setUsernameMessage("");
-                e.target.classList.remove("input-error");
+            setUsernameMessage("");
+            switch (await isUserExists(username)) {
+                case undefined: // unkwown case (may be error in endpoint)
+                    setUsernameMessage("Server problem");
+                    break
+                case true:
+                    setUsernameMessage("Username is already exists");
+                    break
+                default:
+                    setUsernameMessage("");
+                    break
             }
         }, 1000, username));
-    }
+    };
 
-    const updateEmail = (e) => {
+    const updateEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        if (! isEmailValid(value)) {
-            setEmailMessage("Invalid Email.");
-            e.target.classList.add("input-error");
-        } else {
-            setEmailMessage("Valid Email.");
-            e.target.classList.remove("input-error");
-        }
+
+        if (!Boolean(value))
+            setEmailMessage("Email is required");
+        else if (!isEmailValid(value)) 
+            setEmailMessage("Invalid email");
+        else
+            setEmailMessage("");
 
         setEmail(value);
     }
 
-    const updatePassword = (e) => {
+    const updateUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
 
-        if (value === "") {
-            setPasswordMessage("Invalid Password.");
-            e.target.classList.add("input-error");
-        }
-        else if (validator.isStrongPassword(value, passwordParams)) {
-            setPasswordMessage('Valid Password.');
-            e.target.classList.remove("input-error");
-        } else {
-            setPasswordMessage(
-                'Not Strong Password. Please use at least 8 characters, 1 lowercase letter, ' +
-                '1 uppercase letter, 1 number and 1 symbol.');
-            e.target.classList.add("input-error");
-        }
+        if (!Boolean(value))
+            setUsernameMessage("Username is required");
+        
+        setUsername(value);
+    }
 
+    const updatePassword = (e: ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+
+        if (!Boolean(value))
+            setPasswordMessage("Password is required");
+        else if (!validator.isStrongPassword(value, passwordParams))
+            setPasswordMessage(
+              'Not Strong Password. Please use at least 8 characters, 1 lowercase ' +
+              'letter, 1 uppercase letter, 1 number and 1 symbol'
+            )
+        else
+            setPasswordMessage("")
+        
         setPassword(value);
     }
 
-    // WARNING: Not use `useState` hook
-    const signUp = async (e) => {
-        let isValid = true;
-        const parentNode = e.target.parentNode;
-        const username = parentNode.querySelector("#username");
-        if (! isUsernameValid(username.value)) {
-            username.classList.add("input-error");
-            isValid = false;
-        } else {
-            let isExists = username.value === "" ? true : await isUserExists(username.value);
-            isExists = isExists === undefined ? true : isExists;
-            if (isExists) {
-                username.classList.add("input-error");
-                isValid = false;
+    const handleSignUp = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        setServerError("");
+
+        try {
+            let response = await register(
+                username, 
+                email, 
+                password
+            );
+
+            if (response.success) {
+                try {
+                    response = await login(username, password)
+                
+                    if (response.success) {
+                        navigate(document.referrer || "/");
+                        return
+                    }
+                } catch {
+                    alert(
+                        `User ${username} was created, ` + 
+                        `but due to server problems we were unable to authorize him.`)
+                    return
+                }
             }
+        } catch {
+
         }
-
-        const email = parentNode.querySelector("#email");
-        if (! isEmailValid(email.value)) {
-            email.classList.add("input-error");
-            isValid = false;
-        }
-
-        const password = parentNode.querySelector("#password");
-        if (! validator.isStrongPassword(password.value, passwordParams)) {
-            password.classList.add("input-error");
-            isValid = false;
-        }
-
-        if (! isValid) {
-            buttonRef.current.addEventListener('click', signUp, {once: true});
-
-            return;
-        }
-
-        let response = await postUserCreate(
-            username.value, email.value, password.value
-        ),
-            codeErrors = [404, 422],
-            errorMsg = getResponseData(response),
-            status = +response?.status;
-
-        if (200 <= status && status < 300) {
-            response = await postSessionLogin(username.value, password.value);
-            if (200 <= status && status < 300) {
-                window.location.href = "/";
-                return;
-            }
-
-            showServerMessage(response, `User ${username.value} was created, ` +
-            `but due to server problems we were unable to authorize him.`);
-        }
-        else if (status === 403)
-            console.warn("Warning: CSRF-Token was not received.");
-        else if (codeErrors.includes(status))
-            showServerMessage(response, errorMsg);
-        else if (response)
-            showServerMessage(response);
-
-        buttonRef.current.addEventListener('click', signUp, {once: true});
-    }
-
-    const onShadowRootLoad = () => {
-        if (buttonRef.current)
-            buttonRef.current.addEventListener('click', signUp, {once: true});
     }
 
     return (
-        <ShadowRoot onload={onShadowRootLoad} pureStyles={[signupCSS]}>
+        <ShadowRoot pureStyles={[signupCSS]}>
             <div className="signup-block">
                 <div className="container">
                     <div className="content">
@@ -171,12 +132,13 @@ const SignupBlock = () => {
                             <p>Username</p>
                             <input id="username"
                                    aria-label=""
-                                   className="input-default"
+                                   className={usernameMessage === "" ? "input-default" : "input-default input-error"}
                                    value={username}
                                    type="text"
-                                   onChange={(e => setUsername(e.target.value))}
+                                   onChange={updateUsername}
                                    onKeyUp={updateTimer}
                                    onKeyDown={clearTimer}
+                                   disabled={isLoading}
                                    placeholder="Enter username"></input>
                             {usernameMessage === "" ?
                                 <span className="message-success">
@@ -191,15 +153,14 @@ const SignupBlock = () => {
                             <p>Email</p>
                             <input id="email"
                                    aria-label=""
-                                   className="input-default"
+                                   className={emailMessage === "" ? "input-default" : "input-default input-error"}
                                    value={email}
                                    type="email"
                                    onChange={updateEmail}
+                                   disabled={isLoading}
                                    placeholder="Enter username"></input>
-                            {emailMessage === "Valid Email." ?
-                                <span className="message-success">
-                                    {emailMessage}
-                                </span> :
+                            {emailMessage === "" ?
+                                null :
                                 <span className="message-error">
                                     {emailMessage}
                                 </span>
@@ -209,23 +170,32 @@ const SignupBlock = () => {
                             <p>Password</p>
                             <input id="password"
                                    aria-label=""
-                                   className="input-default"
+                                   className={passwordMessage === "" ? "input-default" : "input-default input-error"}
                                    value={password}
                                    type="password"
                                    onChange={updatePassword}
+                                   disabled={isLoading}
                                    placeholder="Enter password"></input>
-                            {passwordMessage === "Valid Password." ?
-                                <span className="message-success">
-                                    {passwordMessage}
-                                </span> :
+                            {passwordMessage === "" ?
+                                null :
                                 <span className="message-error">
                                     {passwordMessage}
                                 </span>
                             }
                         </div>
-                        <button ref={buttonRef}
-                                className="button button-accent signup-btn">
-                            Sign up
+
+                        {error || serverError ? (
+                            <span className="message-error">
+                                {error || serverError}
+                            </span>
+                        ) : null}
+
+                        <button
+                            onClick={handleSignUp}
+                            className="button button-accent signup-btn"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "Signing up ..." : "Sign up"}
                         </button>
                     </div>
                 </div>

@@ -39,18 +39,19 @@ export const getSessionLogout = async (): Promise<WResponse> => {
 /**
  * Return True if user exists, False if not exists and undefined when server failed.
  */
-export const getUserCheck = async (username: string): Promise<boolean | undefined> => {
+export const getUserCheck = async (username: string): Promise<WResponse> => {
     const response = await apiRequest(() => apiClient.get(url + `/user/check?username=${username}`, {
         withCredentials: true,
     }));
-    if (!response.success)
-        return
-
-    return getResponseData(response) as boolean;
+    return response;
 }
 
 export const isUserExists = async (username: string): Promise<boolean | undefined> => {
-    return await getUserCheck(username);
+    const response = await getUserCheck(username);
+    if (!response.success)
+        return
+
+    return !!getResponseData(response);
 }
 
 export const postSessionLogin = async (username: string, password: string): Promise<WResponse> => {

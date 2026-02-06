@@ -5,9 +5,7 @@ import SigninBlock from "@/components/signin/SigninBlock";
 import {showServerMessage} from "@common/utils.jsx";
 
 const SignIn = () => {
-    const data = useLoaderData(),
-        {session} = data;
-    if (!session) showServerMessage();
+    const data = useLoaderData();
 
     return (
         <div className="signin-container">

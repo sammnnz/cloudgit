@@ -61,7 +61,6 @@ const SigninBlock = () => {
                             />
                         </div>
                         
-                        {/* Показываем ошибку если есть */}
                         {error || serverError ? (
                             <span className="message-error">
                                 {error || serverError}

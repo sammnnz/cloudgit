@@ -146,6 +146,14 @@ export const parsePathName = (start: string = "", index: number = 0) => {
     }
 }
 
+export const passwordParams = {
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 1
+}
+
 /**
  * @deprecated 
  */

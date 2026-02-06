@@ -44,7 +44,7 @@ const getStyleSheets = (tables = [], pure = true) => {
             cssRules = styleSheet.cssRules || styleSheet.rules;
             if (!cssRules) continue;
         } catch (error) {
-            console.warn('Cannot access cssRules for:', styleSheet.href, error);
+            // console.warn('Cannot access cssRules for:', styleSheet.href, error);
             continue;
         }
 

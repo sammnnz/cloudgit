@@ -1,8 +1,7 @@
-import React from "react";
 import {Navbar as _Navbar} from "@/components/common/Navbar";
 import navbarCSS from "@/styles/account/navbar.module.css"
 
-const Navbar = ({session}) => {
+const Navbar = () => {
     const links = {
         'Product': undefined,
         'Platform': {
@@ -25,7 +24,7 @@ const Navbar = ({session}) => {
     }
 
     return (
-        <_Navbar links={links} session={session} styles={navbarCSS}/>
+        <_Navbar links={links} styles={navbarCSS}/>
     );
 }
 

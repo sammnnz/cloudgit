@@ -6,7 +6,7 @@ import AutoResizeInput from "@components/common/AutoResizeInput.jsx";
 import {Loading, ServerError} from "@components/Actions.jsx";
 import actionsCSS from "@/styles/actions.module.css"
 import ReactShadowRoot from "react-shadow-root";
-import {convertResponseData, showServerMessage} from "@common/utils.jsx";
+import {getResponseData, showServerMessage} from "@common/utils.jsx";
 import SSHKey from "@/components/account/settings/SSHKey.jsx";
 
 const NoSSHKeys = () => {
@@ -57,7 +57,7 @@ const SettingsBlock = ({account, session}) => {
             status = response?.status
 
         if (!status || 200 > status || status >= 300) {
-            const errorMsg = convertResponseData(response);
+            const errorMsg = getResponseData(response);
             showServerMessage(response, errorMsg);
             if (addButtonRef.current)
                 addButtonRef.current.addEventListener('click', addSSHKey, {once: true});
@@ -98,7 +98,7 @@ const SettingsBlock = ({account, session}) => {
         if (200 > status || status >= 300) {
             setLoading(null);
             setError(serverError);
-            const errorMsg = convertResponseData(response);
+            const errorMsg = getResponseData(response);
             showServerMessage(response, errorMsg);
             return
         }

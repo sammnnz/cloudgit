@@ -1,22 +1,23 @@
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { getSession, login as loginSession, createUser, logout as logoutSession } from '@/store/slices/authSlice';
 import { useEffect } from 'react';
-import type { AuthUser } from '@/store/types';
+import type { AuthUser, ErrorObject } from '@/store/types';
 import { WResponse } from '@/common/types';
 
 // ============================================================================
 // RETURN TYPE FOR useAuth HOOK
 // ============================================================================
 
-export interface UseAuthReturn {
+export interface UseAuthReturn<E = {}> {
   user: AuthUser;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  errorObject: ErrorObject<E>;
   csrfToken?: string;
   login: (username: string, password: string) => Promise<WResponse>;
   register: (username: string, email: string, password: string) => Promise<WResponse>;
-  logout: () => void;
+  logout: () => Promise<WResponse>;
 }
 
 // ============================================================================
@@ -38,7 +39,7 @@ export interface UseAuthReturn {
  * await login('admin', 'password123');
  * 
  * // Logout
- * logout();
+ * await logout();
  */
 export const useAuth = (): UseAuthReturn => {
   const dispatch = useAppDispatch();
@@ -67,11 +68,12 @@ export const useAuth = (): UseAuthReturn => {
   /**
    * Logout
    */
-  const logout = () => {
-    dispatch(logoutSession());
+  const logout = async () => {
+    const response = await dispatch(logoutSession({})).unwrap();
     // Clean localStorage
     localStorage.removeItem('user');
     localStorage.removeItem('csrf_token');
+    return response
   };
 
   return {
@@ -80,6 +82,7 @@ export const useAuth = (): UseAuthReturn => {
     isAuthenticated: auth.user?.is_authenticated,
     isLoading: auth.loading,
     error: auth.error,
+    errorObject: auth.errorObject,
     csrfToken: auth.csrfToken,
     login,
     register,

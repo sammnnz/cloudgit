@@ -1,10 +1,10 @@
-import React from "react";
 import {Navbar as _Navbar} from "@/components/common/Navbar";
 import navbarCSS from "@/styles/account/navbar.module.css"
+import { useAuth } from "@/hooks/useAuth";
 
-const Navbar = ({account, session}) => {
-    const accountUsername = account.username,
-        sessionUsername = session.username;
+const Navbar = ({account}) => {
+    const {user} = useAuth();
+    const accountUsername = account.username;
 
     const links = {
         'Profile': {
@@ -21,11 +21,11 @@ const Navbar = ({account, session}) => {
         }
     }
 
-    if (accountUsername !== sessionUsername)
+    if (accountUsername !== user.username)
         delete links['Settings'];
 
     return (
-        <_Navbar session={session} links={links} styles={[navbarCSS]}/>
+        <_Navbar links={links} styles={[navbarCSS]}/>
     );
 }
 

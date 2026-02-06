@@ -9,9 +9,7 @@ import ProfileBlock from "@components/account/profile/ProfileBlock.jsx"
 const Account = () => {
     const {username} = useParams(),
         account = {username};
-    const data = useLoaderData(),
-        {session} = data;
-    if (!session) showServerMessage();
+    const data = useLoaderData();
 
     const [searchParams] = useSearchParams(),
         tab = searchParams.get("tab");
@@ -31,8 +29,8 @@ const Account = () => {
 
     return (
         <div className="account-container">
-            <Navbar account={account} session={session}/>
-            {Component ? <Component account={account} session={session}/> : null}
+            <Navbar account={account}/>
+            {Component ? <Component account={account}/> : null}
         </div>
     );
 }
