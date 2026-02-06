@@ -1,0 +1,55 @@
+// ⚠️ ЭТО ПРИМЕР ФАЙЛА
+// Сохраните как src/App.tsx для тестирования аутентификации
+
+import React from 'react';
+import { StoreProvider } from '@/store';
+import { ExampleAuthComponent } from '@/components/auth/ExampleAuthComponent';
+import { useAuth } from '@/hooks/useAuth';
+
+function App() {
+  return (
+    <StoreProvider>
+      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+        <h1>Auth Persistence Demo</h1>
+        <ExampleAuthComponent />
+        
+        <div style={{ marginTop: '30px', padding: '10px', background: '#e3f2fd', borderRadius: '4px' }}>
+          <h3>🎨 Как это работает:</h3>
+          <ol>
+            <li><strong>Вход:</strong> Нажмите "Войти" → данные сохранятся в localStorage</li>
+            <li><strong>Перезагрузка:</strong> Нажмите F5 → данные восстановятся автоматически</li>
+            <li><strong>Выход:</strong> Нажмите "Выйти" → данные удалятся из localStorage</li>
+            <li><strong>Проверка:</strong> Откройте DevTools → Application → LocalStorage → посмотрите на ключ 'auth_state'</li>
+          </ol>
+          
+          <h3>🔒 Что сохраняется:</h3>
+          <ul>
+            <li>✅ user.id</li>
+            <li>✅ user.username</li>
+            <li>✅ user.is_authenticated</li>
+            <li>✅ Временная метка (timestamp)</li>
+            <li>✅ Версия схемы (version)</li>
+          </ul>
+          
+          <h3>❌ Что НЕ сохраняется:</h3>
+          <ul>
+            <li>❌ loading (всегда сбрасывается в false)</li>
+            <li>❌ error (всегда сбрасывается в null)</li>
+            <li>❌ csrfToken (безопасность!)</li>
+            <li>❌ errorObject</li>
+          </ul>
+          
+          <h3>⏱️ Автоматические правила:</h3>
+          <ul>
+            <li>Данные устаревают через 30 дней</li>
+            <li>При logout данные удаляются</li>
+            <li>При ошибке сессии данные удаляются</li>
+            <li>Невалидные данные автоматически очищаются</li>
+          </ul>
+        </div>
+      </div>
+    </StoreProvider>
+  );
+}
+
+export default App;

@@ -70,9 +70,8 @@ export const useAuth = (): UseAuthReturn => {
    */
   const logout = async () => {
     const response = await dispatch(logoutSession({})).unwrap();
-    // Clean localStorage
-    localStorage.removeItem('user');
-    localStorage.removeItem('csrf_token');
+    // ❌ УБИРАЕМ: очистка теперь происходит автоматически в persistMiddleware
+    // Если нужно очистить что-то дополнительно, делайте это в middleware
     return response
   };
 
