@@ -1,6 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { API } from '@/api';
 import type { RootState, AuthState, AuthUser, ApiResponse } from '@/store/types';
+import { WResponse } from '@/common/types';
+import { getResponseData, isEmailValid, isUsernameValid, passwordParams } from '@/common/utils';
+import validator from "validator/es";
+import { isUserExists } from '@/api/auth';
 
 const auth = API.auth;
 
@@ -9,20 +13,21 @@ const auth = API.auth;
 // ============================================================================
 
 // Попытка получить CSRF из localStorage
-const getCSRFFromStorage = (): string | undefined => {
-  try {
-    const token = localStorage.getItem('csrf_token');
-    return token || undefined;
-  } catch {
-    return undefined;
-  }
-};
+// const getCSRFFromStorage = (): string | undefined => {
+//   try {
+//     const token = localStorage.getItem('csrf_token');
+//     return token || undefined;
+//   } catch {
+//     return undefined;
+//   }
+// };
 
 const initialState: AuthState = {
   user: { is_authenticated: false },
   loading: false,
   error: null,
-  csrfToken: getCSRFFromStorage(),
+  errorObject: { msg: undefined },
+  csrfToken: undefined
 };
 
 // ============================================================================
@@ -30,49 +35,178 @@ const initialState: AuthState = {
 // ============================================================================
 
 /**
- * Проверка сессии пользователя
+ * Get user session
  */
-export const checkAuthSession = createAsyncThunk<AuthUser, {}, { state: RootState }>(
-  'auth/checkSession',
-  async (args) => {
-    return await auth.getSessionInfo(args);
+export const getSession = createAsyncThunk<
+  AuthUser, 
+  void, 
+  { state: RootState }
+>(
+  'auth/getSession',
+  async () => {
+    return await auth.getSessionInfo();
   }
 );
 
 /**
- * Вход в систему
+ * Login in account
  */
-export const loginUser = createAsyncThunk<
-  ApiResponse,
+export const login = createAsyncThunk<
+  WResponse,
   { username: string; password: string },
   { state: RootState }
 >(
   'auth/login',
-  async (credentials) => {
+  async (credentials, thunkAPI) => {
     const { username, password } = credentials;
-    const response = await auth.postSessionLogin(username, password);
+
+    // 1. Validation
+    if (!username || !password) {
+      return thunkAPI.rejectWithValue('Username and password are required');
+    }
+    
+    // 2. Call API
+    const response = await auth.postSessionLogin(
+      username, 
+      password
+    );
+    
+    // 3. API error handling
+    if (!response.success) {
+      switch (response.status) {
+        case 403: // CSRF token invalid
+          return thunkAPI.rejectWithValue("No access to account");
+        case 404:
+        case 422:
+          return thunkAPI.rejectWithValue("Invalid credentials");
+        default:
+          return thunkAPI.rejectWithValue(response.message);
+      }
+    }
+    
+    // 4. Side-effects
+    // if (...) {
+    //   thunkAPI.dispatch(...);
+    // }
+    
     return response;
   }
 );
 
 /**
- * Регистрация пользователя
+ * Logout
  */
-export const registerUser = createAsyncThunk<
-  ApiResponse,
+export const logout = createAsyncThunk<
+  WResponse,
+  {},
+  { state: RootState }
+>(
+  'auth/logout',
+  async ({}, thunkAPI) => {
+    const response = await auth.getSessionLogout();
+
+    if (!response.success)
+        return thunkAPI.rejectWithValue("Logout failed. Please try again.");
+    
+    return response;
+  }
+);
+
+export interface PayloadRejectCreateUser {
+  username: string | undefined;
+  email: string | undefined;
+  password: string | undefined;
+  msg: string | undefined;
+}
+
+/**
+ * Signup
+ */
+export const createUser = createAsyncThunk<
+  WResponse,
   { username: string; email: string; password: string },
   { state: RootState }
 >(
-  'auth/register',
-  async (data) => {
-    const { username, email, password } = data;
-    const response = await auth.postUserCreate(username, email, password);
+  'auth/createUser',
+  async (data, thunkAPI) => {
+    const { username, email, password } = data
+        , payload: PayloadRejectCreateUser = {
+            username: undefined,
+            email: undefined,
+            password: undefined,
+            msg: undefined
+        };
+
+    // 1. Validation
+    if (!username)
+      payload.username = "Username is required"
+
+    if ((!isUsernameValid(username)) && (!payload.username))
+      payload.username = "Invalid username. " +
+                    "Use any letters of the English alphabet " +
+                    "(upper and lower case), numbers (0-9), " +
+                    "and the underscore (_)"
+    
+    if (!payload.username) {
+      switch (await isUserExists(username)) {
+        case undefined: // unkwown case (may be error in endpoint)
+          payload.username = "Server problem"
+          break
+        case true:
+          payload.username = "Username is already exists"
+          break
+        default:
+          break
+      }
+    }
+
+    if (!email)
+      payload.email = "Email is required";
+
+    if ((!isEmailValid(email)) && (!payload.email)) 
+      payload.email = "Invalid email";
+
+    // TODO: check email exists
+
+    if (!password)
+      payload.password = "Password is required";
+
+    if ((!validator.isStrongPassword(password, passwordParams)) && (!payload.password))
+      payload.password =
+      'Not Strong Password. Please use at least 8 characters, 1 lowercase ' +
+      'letter, 1 uppercase letter, 1 number and 1 symbol';
+
+    if (payload.username || payload.email || payload.password)
+      return thunkAPI.rejectWithValue(payload)
+
+    // 2. Call API
+    const response = await auth.postUserCreate(
+      username, 
+      email, 
+      password
+    );
+
+    // 3. API error handling
+    if (!response.success) {
+      switch (response.status) {
+        case 403: // CSRF token invalid
+          payload.msg = "No access to server";
+          break
+        case 404:
+        case 422:
+        default:
+          payload.msg = getResponseData(response as WResponse<string>);
+      }
+
+      return thunkAPI.rejectWithValue(payload)
+    }
+
     return response;
   }
 );
 
 /**
- * Получение CSRF токена
+ * Get CSRF token
  */
 export const fetchCSRFToken = createAsyncThunk<string | undefined, void, { state: RootState }>(
   'auth/fetchCSRF',
@@ -122,12 +256,9 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    logout: (state) => {
-      state.user = { is_authenticated: false };
-      state.csrfToken = undefined;
-    },
     clearError: (state) => {
       state.error = null;
+      state.errorObject = { msg: undefined };
     },
     setCSRFToken: (state, action: PayloadAction<string>) => {
       state.csrfToken = action.payload;
@@ -136,16 +267,16 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Check session
-      .addCase(checkAuthSession.pending, (state) => {
+      .addCase(getSession.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(checkAuthSession.fulfilled, (state, action: PayloadAction<AuthUser>) => {
+      .addCase(getSession.fulfilled, (state, action: PayloadAction<AuthUser>) => {
         state.loading = false;
         state.user = action.payload;
         state.error = null;
       })
-      .addCase(checkAuthSession.rejected, (state, action) => {
+      .addCase(getSession.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to check session';
         if (!state.user.is_authenticated) {
@@ -154,32 +285,46 @@ const authSlice = createSlice({
       })
       
       // Login
-      .addCase(loginUser.pending, (state) => {
+      .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(loginUser.fulfilled, (state) => {
+      .addCase(login.fulfilled, (state) => {
         state.loading = false;
         state.user.is_authenticated = true;
         state.error = null;
       })
-      .addCase(loginUser.rejected, (state, action) => {
+      .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Login failed';
+        state.error = action.payload as string || 'Login failed';
       })
-      
-      // Register
-      .addCase(registerUser.pending, (state) => {
+
+      // Logout
+      .addCase(logout.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state) => {
+      .addCase(logout.fulfilled, (state) => {
+        state.user = { is_authenticated: false };
+        state.csrfToken = undefined;
+      })
+      .addCase(logout.rejected, (state, action: PayloadAction<string>) => {
+        state.error = action.payload;
+      })
+      
+      // Register
+      .addCase(createUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createUser.fulfilled, (state) => {
         state.loading = false;
         state.error = null;
       })
-      .addCase(registerUser.rejected, (state, action) => {
+      .addCase(createUser.rejected, (state, action: PayloadAction<PayloadRejectCreateUser>) => {
         state.loading = false;
-        state.error = action.error.message || 'Registration failed';
+        state.error = action.payload.msg ?? "";
+        state.errorObject = action.payload;
       })
       
       // CSRF Token
@@ -189,6 +334,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, setCSRFToken } = authSlice.actions;
+export const { clearError, setCSRFToken } = authSlice.actions;
 
 export default authSlice.reducer;

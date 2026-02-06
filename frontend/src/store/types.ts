@@ -12,11 +12,14 @@ export interface AuthUser {
     username?: string;
 }
 
+export type ErrorObject<T = {}> = T & {msg: string | undefined}
+
 // Состояние аутентификации
-export interface AuthState {
+export interface AuthState<E = {}> {
   user: AuthUser;
   loading: boolean;
   error: string | null;
+  errorObject: ErrorObject<E>;
   csrfToken?: string;
 }
 

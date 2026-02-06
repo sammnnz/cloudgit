@@ -13,7 +13,7 @@ import type { StoreProviderProps, RootState, AppDispatch } from './types';
 const persistedState = loadPersistedState();
 
 // Создаем Redux Store
-const store = configureStore({
+export const store = configureStore({
   reducer: {
     auth: authReducer,
     repo: repoReducer,
