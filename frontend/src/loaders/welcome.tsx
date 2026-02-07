@@ -1,15 +1,10 @@
 import { store } from "@/store"
-import { getSession } from "@/store/slices/authSlice";
+import { redirect } from 'react-router-dom';
 
 export const loader = async () => {
     const { auth } = store.getState();
-    if (auth.user?.is_authenticated)
-        window.location.href = `/account/${auth.user.username}`;
+    if (auth.user.is_authenticated)
+        throw redirect(`/account/${auth.user.username}`);
 
-    try {
-        const session = await store.dispatch(getSession()).unwrap();
-        if (auth.user.is_authenticated)
-            window.location.href = `/account/${auth.user.username}`
-    } catch {}
-
+    return null;
 }

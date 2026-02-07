@@ -1,7 +1,10 @@
-import {getSessionInfo} from "@/api/auth";
+import { store } from "@/store"
+import { redirect } from 'react-router-dom';
 
 export const loader = async () => {
-    const session = await getSessionInfo({timeout: 20000});
-    if (session.is_authenticated) window.location.href = `/account/${session.username}`;
-    else return { session };
+    const { auth } = store.getState();
+    if (auth.user.is_authenticated)
+        throw redirect(`/account/${auth.user.username}`);
+
+    return null;
 }
