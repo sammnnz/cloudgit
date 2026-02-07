@@ -12,8 +12,7 @@ export const Navbar = ({links, styles}) => {
         styles = []
 
     const navigate = useNavigate();
-    const {user, isAuthenticated, logout, error } = useAuth()
-    const buttonRef = useRef(null);
+    const {user, isAuthenticated, isLoading, logout, error } = useAuth();
 
     const handleLogout = async () => {
         try {
@@ -27,8 +26,8 @@ export const Navbar = ({links, styles}) => {
     }
 
     const authButtons = [
-        (<button key={1} ref={buttonRef} className="button button-base">
-            Logout
+        (<button key={1} onClick={handleLogout} disabled={isLoading} className="button button-base">
+            {isLoading ? "Logout ..." : "Logout"}
         </button>),
         (<a key={2} href={`/account/${user.username}`}>
             <img src={iconAvatarDefault} height="24px" alt=""/>
@@ -44,13 +43,8 @@ export const Navbar = ({links, styles}) => {
         </a>)
     ]
 
-    const onShadowLoad = () => {
-        if (buttonRef.current)
-            buttonRef.current.addEventListener('click', handleLogout, {once: true});
-    }
-
     return (
-        <ShadowRoot onload={onShadowLoad} pureStyles={[navbarCSS, ...styles]}>
+        <ShadowRoot pureStyles={[navbarCSS, ...styles]}>
             <div className="navbar">
                 <div className="container">
                     <div className="logo">

@@ -1,6 +1,4 @@
-import React from "react";
-import {useLoaderData, useParams, useSearchParams} from "react-router";
-import {showServerMessage} from "@common/utils";
+import {useParams, useSearchParams} from "react-router";
 import Navbar from "@/components/account/Navbar";
 import RepositoriesBlock from "@components/account/repositories/RepositoriesBlock.jsx";
 import SettingsBlock from "@components/account/settings/SettingsBlock.jsx";
@@ -9,7 +7,6 @@ import ProfileBlock from "@components/account/profile/ProfileBlock.jsx"
 const Account = () => {
     const {username} = useParams(),
         account = {username};
-    const data = useLoaderData();
 
     const [searchParams] = useSearchParams(),
         tab = searchParams.get("tab");
