@@ -38,14 +38,14 @@ def session_info(request):
     return request.user
 
 
-@router.post('/session/login/', response={204: None, 422: str})
+@router.post('/session/login/', response={200: SessionInfoOut, 422: str})
 async def session_login(request, data: SessionLoginIn):
     user = await aauthenticate(username=data.username, password=data.password)
     if user is None:
         return 422, "Username or password invalid."
 
     await alogin(request, user)
-    return 204, None
+    return 200, user
 
 
 @router.get('/session/logout/', response={200: None})
