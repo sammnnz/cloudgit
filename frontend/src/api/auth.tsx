@@ -1,6 +1,7 @@
 import { apiRequest, apiClient, getResponseData } from "@/common/utils";
 import { WResponse } from "@/common/types";
 import { SessionInfo } from "./types";
+import { AuthUser } from "@/store/types";
 
 export const url = '/api/auth';
 
@@ -17,16 +18,9 @@ export const getCSRFToken = async (): Promise<string | undefined> => {
     return token;
 }
 
-export const getSessionInfo = async (options = {}): Promise<SessionInfo> => {
+export const getSessionInfo = async (options = {}): Promise<WResponse<SessionInfo>> => {
     Object.assign(options, {withCredentials: true});
-    const response = await apiRequest(() => apiClient.get(url + '/session/info/', options)),
-        result = {
-            'id': undefined,
-            'is_authenticated': false,
-            'username': undefined
-    };
-    Object.assign(result, getResponseData(response))
-    return result;
+    return await apiRequest(() => apiClient.get(url + '/session/info/', options));
 }
 
 export const getSessionLogout = async (): Promise<WResponse> => {
@@ -54,7 +48,7 @@ export const isUserExists = async (username: string): Promise<boolean | undefine
     return !!getResponseData(response);
 }
 
-export const postSessionLogin = async (username: string, password: string): Promise<WResponse> => {
+export const postSessionLogin = async (username: string, password: string): Promise<WResponse<AuthUser>> => {
     const token = await getCSRFToken()
         , response = await apiRequest(() => apiClient.post(url + '/session/login/', { username, password },
         {

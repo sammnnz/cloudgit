@@ -44,7 +44,16 @@ export const getSession = createAsyncThunk<
 >(
   'auth/getSession',
   async () => {
-    return await auth.getSessionInfo();
+    const response = await auth.getSessionInfo();
+
+    // TODO: make scheme
+    const result = {
+          'id': undefined,
+          'is_authenticated': false,
+          'username': undefined
+        };
+    Object.assign(result, getResponseData(response));
+    return result;
   }
 );
 
@@ -52,9 +61,12 @@ export const getSession = createAsyncThunk<
  * Login in account
  */
 export const login = createAsyncThunk<
-  WResponse,
+  WResponse<AuthUser>,
   { username: string; password: string },
-  { state: RootState }
+  { 
+    state: RootState;
+    rejectValue: string;
+  }
 >(
   'auth/login',
   async (credentials, thunkAPI) => {
@@ -99,7 +111,10 @@ export const login = createAsyncThunk<
 export const logout = createAsyncThunk<
   WResponse,
   {},
-  { state: RootState }
+  { 
+    state: RootState;
+    rejectValue: string;
+  }
 >(
   'auth/logout',
   async ({}, thunkAPI) => {
@@ -289,14 +304,14 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state) => {
+      .addCase(login.fulfilled, (state, action: PayloadAction<WResponse<AuthUser>>) => {
         state.loading = false;
-        state.user.is_authenticated = true;
+        state.user = getResponseData(action.payload) as AuthUser;
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string || 'Login failed';
+        state.error = action.payload || 'Login failed';
       })
 
       // Logout
@@ -309,7 +324,8 @@ const authSlice = createSlice({
         state.csrfToken = undefined;
       })
       .addCase(logout.rejected, (state, action: PayloadAction<string>) => {
-        state.error = action.payload;
+        state.loading = false;
+        state.error = action.payload || 'Logout failed';
       })
       
       // Register
