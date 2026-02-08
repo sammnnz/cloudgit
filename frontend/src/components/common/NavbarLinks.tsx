@@ -1,39 +1,5 @@
-import React from "react";
-import DropdownBar from "@components/common/DropdownBar.jsx";
-import { ShadowRoot } from "@components/ShadowRoot.jsx";
-import dropdownBarCSS from "@styles/common/dropdown-bar.module.css";
-import navbarLinksCSS from "@styles/common/navbar-links.module.css";
+// Deprecated - Migrated to MUI-based NavbarMui.tsx
+// This component was used with ShadowRoot for navigation with dropdown menus
+// Now using MUI components with built-in style encapsulation and Menu component
 
-const NavbarLinks = ({links}) => {
-    function* getLinks (links, top = true) {
-        for (let link in links) {
-            if (typeof link !== "string")
-                throw new Error("link must be a string.")
-
-            const href = links[link]?.href,
-                sublinks = links[link]?.links;
-            yield (
-                <div className="link-container">
-                    <a href={href ? href : null} className={top ? "link" : null}>{link}</a>
-                    {typeof sublinks === 'undefined' ? null :
-                        <DropdownBar>
-                            {...getLinks(sublinks, false)}
-                        </DropdownBar>
-                    }
-                </div>
-            )
-        }
-    }
-
-    return (
-        <ShadowRoot pureStyles={[dropdownBarCSS, navbarLinksCSS]}>
-            <div className="container">
-                <div className="links">
-                    {...getLinks(links)}
-                </div>
-            </div>
-        </ShadowRoot>
-    );
-}
-
-export default NavbarLinks;
+export { NavbarMui as default } from "@/components/common/NavbarMui";

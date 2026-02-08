@@ -1,5 +1,5 @@
 import Header from "@/components/Header";
-import Navbar from "@/components/welcome/NavbarMui";
+import Navbar from "@/components/welcome/Navbar";
 import WelcomeBlock from "@/components/welcome/WelcomeBlock";
 import Footer from "@/components/Footer";
 

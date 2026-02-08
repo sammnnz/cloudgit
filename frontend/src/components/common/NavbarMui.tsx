@@ -3,14 +3,12 @@ import {
     AppBar,
     Toolbar,
     Box,
-    Typography,
     Button,
     IconButton,
     Menu,
     MenuItem,
     Avatar,
     Stack,
-    useTheme,
 } from "@mui/material";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/useAuth";
@@ -133,7 +131,6 @@ export const NavbarMui: React.FC<NavbarProps> = ({
 }) => {
     const navigate = useNavigate();
     const { user, isAuthenticated, isLoading, logout, error } = useAuth();
-    const theme = useTheme();
 
     const handleLogout = async () => {
         try {

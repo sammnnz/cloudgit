@@ -1,32 +1,37 @@
 import React from "react";
-import {Navbar as _Navbar} from "@/components/common/Navbar";
-import navbarCSS from "@/styles/repodata/navbar.module.css"
+import { NavbarMui } from "@/components/common/NavbarMui";
 
-const Navbar = ({account, repo, session}) => {
+interface NavbarProps {
+    account: { username: string };
+    repo: { repo_name: string };
+    session: { username: string };
+}
+
+const Navbar = ({account, repo, session}: NavbarProps) => {
     const accountUsername = account.username,
         sessionUsername = session.username,
         repoName = repo.repo_name;
 
-    const links = {
+    // Only include Settings link if user is viewing their own account
+    const shouldShowSettings = accountUsername === sessionUsername;
+
+    const links: Record<string, { href: string }> = {
         'Profile': {
             href: '/account/' + accountUsername + '?tab=profile',
-            links: undefined
-        },
-        'Settings': {
-            href: '/account/' + accountUsername + '/' + repoName + '?tab=settings',
-            links: undefined
         },
         'Statistics': {
             href: '/account/' + accountUsername + '/' + repoName + '?tab=statistics',
-            links: undefined
         }
+    };
+
+    if (shouldShowSettings) {
+        links['Settings'] = {
+            href: '/account/' + accountUsername + '/' + repoName + '?tab=settings',
+        };
     }
 
-    if (accountUsername !== sessionUsername)
-        delete links['Settings'];
-
     return (
-        <_Navbar session={session} links={links} styles={[navbarCSS]}/>
+        <NavbarMui links={links} variant="account" />
     );
 }
 

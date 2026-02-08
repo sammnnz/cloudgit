@@ -1,30 +1,29 @@
-import {Navbar as _Navbar} from "@/components/common/Navbar";
-import navbarCSS from "@/styles/account/navbar.module.css"
+import { NavbarMui } from "@/components/common/NavbarMui";
 
 const Navbar = () => {
     const links = {
-        'Product': undefined,
+        'Product': {},
         'Platform': {
             href: undefined,
             links: {
-                'Storage': undefined,
-                'CI/CD': undefined,
-                'CLI': undefined
+                'Storage': {},
+                'CI/CD': {},
+                'CLI': {}
             }
         },
         'Pricing': {
             href: undefined,
             links: {
-                'Free': undefined,
-                'Premium': undefined,
-                'Ultimate': undefined
+                'Free': {},
+                'Premium': {},
+                'Ultimate': {}
             }
         },
-        'About': undefined,
-    }
+        'About': {},
+    };
 
     return (
-        <_Navbar links={links} styles={navbarCSS}/>
+        <NavbarMui links={links} variant="default" />
     );
 }
 
