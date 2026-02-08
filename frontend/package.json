@@ -33,7 +33,8 @@
     "react-shadow-root": "^6.2.0",
     "react-slick": "^0.30.3",
     "slick-carousel": "^1.8.1",
-    "validator": "^13.15.0"
+    "validator": "^13.15.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/react": "^19.2.8",

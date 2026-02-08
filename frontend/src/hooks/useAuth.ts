@@ -15,7 +15,6 @@ export interface UseAuthReturn<E = {}> {
   isChecking: boolean; // session
   error: string | null;
   errorObject: ErrorObject<E>;
-  csrfToken?: string;
   login: (username: string, password: string) => Promise<WResponse>;
   register: (username: string, email: string, password: string) => Promise<WResponse>;
   logout: () => Promise<WResponse>;
@@ -74,8 +73,6 @@ export const useAuth = (): UseAuthReturn => {
    */
   const login = async (username: string, password: string): Promise<WResponse> => {
     const result = await dispatch(loginSession({ username, password })).unwrap();
-    // await checkSession();
-    // await dispatch(fetchCSRFToken());
     return result;
   };
 
@@ -84,8 +81,6 @@ export const useAuth = (): UseAuthReturn => {
    */
   const logout = async () => {
     const result = await dispatch(logoutSession({})).unwrap();
-    // ❌ УБИРАЕМ: очистка теперь происходит автоматически в persistMiddleware
-    // Если нужно очистить что-то дополнительно, делайте это в middleware
     return result
   };
 
@@ -105,7 +100,6 @@ export const useAuth = (): UseAuthReturn => {
     isChecking,
     error: auth.error,
     errorObject: auth.errorObject,
-    csrfToken: auth.csrfToken,
     login,
     register,
     logout,

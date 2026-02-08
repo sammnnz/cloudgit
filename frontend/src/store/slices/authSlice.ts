@@ -5,6 +5,11 @@ import { WResponse } from '@/common/types';
 import { getResponseData, isEmailValid, isUsernameValid, passwordParams } from '@/common/utils';
 import validator from "validator/es";
 import { isUserExists } from '@/api/auth';
+import { validateData } from '@/utils/validation';
+import { 
+  AuthUserSchema, 
+  LoginRequestSchema,
+} from '@/store/schemas/authSchemas';
 
 const auth = API.auth;
 
@@ -12,22 +17,11 @@ const auth = API.auth;
 // INITIAL STATE
 // ============================================================================
 
-// Попытка получить CSRF из localStorage
-// const getCSRFFromStorage = (): string | undefined => {
-//   try {
-//     const token = localStorage.getItem('csrf_token');
-//     return token || undefined;
-//   } catch {
-//     return undefined;
-//   }
-// };
-
 const initialState: AuthState = {
   user: { is_authenticated: false },
   loading: false,
   error: null,
   errorObject: { msg: undefined },
-  csrfToken: undefined
 };
 
 // ============================================================================
@@ -46,14 +40,9 @@ export const getSession = createAsyncThunk<
   async () => {
     const response = await auth.getSessionInfo();
 
-    // TODO: make scheme
-    const result = {
-          'id': undefined,
-          'is_authenticated': false,
-          'username': undefined
-        };
-    Object.assign(result, getResponseData(response));
-    return result;
+    const validatedUser = validateData(response.data, AuthUserSchema, 'getSession');
+    
+    return validatedUser as AuthUser;
   }
 );
 
@@ -72,8 +61,10 @@ export const login = createAsyncThunk<
   async (credentials, thunkAPI) => {
     const { username, password } = credentials;
 
-    // 1. Validation
-    if (!username || !password) {
+    // 1. Validation request
+    try {
+      validateData(credentials, LoginRequestSchema, 'login request');
+    } catch (error) {
       return thunkAPI.rejectWithValue('Username and password are required');
     }
     
@@ -95,13 +86,20 @@ export const login = createAsyncThunk<
           return thunkAPI.rejectWithValue(response.message);
       }
     }
-    
+
     // 4. Side-effects
     // if (...) {
     //   thunkAPI.dispatch(...);
     // }
-    
-    return response;
+
+    // 5. Validation response
+    try {
+      validateData(response.data, AuthUserSchema, 'login response');
+    } catch (error) {
+      return thunkAPI.rejectWithValue('Invalid login response');
+    }
+
+    return response
   }
 );
 
@@ -220,16 +218,24 @@ export const createUser = createAsyncThunk<
   }
 );
 
-/**
- * Get CSRF token
- */
-export const fetchCSRFToken = createAsyncThunk<string | undefined, void, { state: RootState }>(
-  'auth/fetchCSRF',
-  async () => {
-    const token = await auth.getCSRFToken();
-    return token;
-  }
-);
+// /**
+//  * Get CSRF token
+//  */
+// export const fetchCSRFToken = createAsyncThunk<
+//   string, 
+//   {}, 
+//   { state: RootState }
+// >(
+//   'auth/fetchCSRF',
+//   async ({}, thunkAPI) => {
+//     const token = await auth.getCSRFToken();
+
+//     if (!token)
+//       return thunkAPI.rejectWithValue("CSRF-Token is required");
+
+//     return token;
+//   }
+// );
 
 /**
  * Добавление SSH ключа
@@ -275,9 +281,6 @@ const authSlice = createSlice({
       state.error = null;
       state.errorObject = { msg: undefined };
     },
-    setCSRFToken: (state, action: PayloadAction<string>) => {
-      state.csrfToken = action.payload;
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -321,7 +324,6 @@ const authSlice = createSlice({
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = { is_authenticated: false };
-        state.csrfToken = undefined;
       })
       .addCase(logout.rejected, (state, action: PayloadAction<string>) => {
         state.loading = false;
@@ -342,14 +344,9 @@ const authSlice = createSlice({
         state.error = action.payload.msg ?? "";
         state.errorObject = action.payload;
       })
-      
-      // CSRF Token
-      .addCase(fetchCSRFToken.fulfilled, (state, action: PayloadAction<string | undefined>) => {
-        state.csrfToken = action.payload;
-      });
   },
 });
 
-export const { clearError, setCSRFToken } = authSlice.actions;
+export const { clearError } = authSlice.actions;
 
 export default authSlice.reducer;

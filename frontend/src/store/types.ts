@@ -20,7 +20,6 @@ export interface AuthState<E = {}> {
   loading: boolean;
   error: string | null;
   errorObject: ErrorObject<E>;
-  csrfToken?: string;
 }
 
 // Состояние репозиториев
