@@ -1,7 +1,7 @@
 import React from "react";
 import {useLoaderData, useParams, useSearchParams} from "react-router";
 import {showServerMessage} from "@common/utils";
-import Navbar from "@/components/repodata/Navbar";
+import Navbar from "@/components/repodata/NavbarMui";
 import RepoDataBlock from "@/components/repodata/RepoDataBlock"
 import SettingsBlock from "@/components/repodata/settings/SettingsBlock"
 
