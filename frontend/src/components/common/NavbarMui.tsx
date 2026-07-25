@@ -5,10 +5,13 @@ import {
     Box,
     Button,
     IconButton,
-    Menu,
-    MenuItem,
     Avatar,
     Stack,
+    Paper,
+    Popper,
+    MenuItem,
+    MenuList,
+    Grow,
 } from "@mui/material";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,97 +33,120 @@ interface MenuWithLinksProps {
     label: string;
     link?: string;
     sublinks?: Record<string, NavbarLink>;
-    onClose: () => void;
 }
 
-const MenuWithLinks: React.FC<MenuWithLinksProps> = ({ label, link, sublinks, onClose }) => {
+const MenuWithLinks: React.FC<MenuWithLinksProps> = ({ label, link, sublinks }) => {
     const navigate = useNavigate();
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [open, setOpen] = React.useState(false);
+    const anchorRef = React.useRef<HTMLButtonElement>(null);
 
-    const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-        onClose();
-    };
+    const sublinkEntries = sublinks ? Object.entries(sublinks) : [];
+    const hasSublinks = sublinkEntries.length > 0;
 
     const handleNavigate = (url?: string) => {
         if (url) {
             navigate(url);
         }
-        handleClose();
+        setOpen(false);
     };
 
-    const sublinkEntries = sublinks ? Object.entries(sublinks) : [];
+    const handleMouseEnter = () => {
+        if (hasSublinks) {
+            setOpen(true);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        setOpen(false);
+    };
+
+    const handleClick = () => {
+        if (link) {
+            handleNavigate(link);
+        } else if (hasSublinks) {
+            setOpen(true);
+        }
+    };
 
     return (
-        <>
+        <Box
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            sx={{ position: 'relative' }}
+        >
             <Button
+                ref={anchorRef}
                 color="inherit"
-                onClick={() => {
-                    if (link) {
-                        handleNavigate(link);
-                    } else if (sublinks) {
-                        handleClick(event as any);
-                    }
-                }}
+                onClick={handleClick}
                 sx={{
                     textTransform: "none",
                     fontWeight: 600,
                     color: "#959595",
+                    borderRadius: 0,
+                    padding: '0 10px',
+                    height: 50,
                     "&:hover": {
                         color: "#000000",
+                        backgroundColor: 'transparent',
                     },
                 }}
             >
                 {label}
             </Button>
 
-            {sublinkEntries.length > 0 && (
-                <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleClose}
-                    MenuListProps={{
-                        sx: {
-                            py: 0,
-                            bgcolor: "#ffffff",
-                        },
-                    }}
-                    PaperProps={{
-                        sx: {
-                            mt: 1,
-                            minWidth: 200,
-                            boxShadow: "0 4px 12px 0 rgb(0 0 0 / 8%)",
-                            borderRadius: "4px",
-                            p: 1.5,
-                        },
-                    }}
+            {hasSublinks && (
+                <Popper
+                    open={open}
+                    anchorEl={anchorRef.current}
+                    placement="bottom-start"
+                    transition
+                    disablePortal
+                    sx={{ zIndex: 1300 }}
                 >
-                    {sublinkEntries.map(([subLabel, subLink]) => (
-                        <MenuItem
-                            key={subLabel}
-                            onClick={() => handleNavigate(subLink.href)}
-                            sx={{
-                                fontWeight: 600,
-                                fontSize: "12px",
-                                color: "#959595",
-                                py: 1,
-                                mb: sublinkEntries[sublinkEntries.length - 1][0] === subLabel ? 0 : 1,
-                                "&:hover": {
-                                    color: "#49A7CC",
-                                    bgcolor: "rgba(73, 167, 204, 0.05)",
-                                },
-                            }}
+                    {({ TransitionProps, placement }) => (
+                        <Grow
+                            {...TransitionProps}
+                            style={{ transformOrigin: placement === 'bottom-start' ? 'top left' : 'top right' }}
                         >
-                            {subLabel}
-                        </MenuItem>
-                    ))}
-                </Menu>
+                            <Paper
+                                onMouseEnter={() => setOpen(true)}
+                                onMouseLeave={() => setOpen(false)}
+                                sx={{
+                                    minWidth: 200,
+                                    boxShadow: "0 4px 12px 0 rgb(0 0 0 / 8%)",
+                                    borderRadius: "4px",
+                                    p: 1.5,
+                                    mt: 0.5,
+                                }}
+                            >
+                                <MenuList>
+                                    {sublinkEntries.map(([subLabel, subLink]) => (
+                                        <MenuItem
+                                            key={subLabel}
+                                            onClick={() => handleNavigate(subLink.href)}
+                                            sx={{
+                                                fontWeight: 600,
+                                                fontSize: "12px",
+                                                color: "#959595",
+                                                py: 1,
+                                                mb: sublinkEntries[sublinkEntries.length - 1][0] === subLabel ? 0 : 1,
+                                                minHeight: 'auto',
+                                                "&:hover": {
+                                                    color: "#49A7CC",
+                                                    bgcolor: "rgba(73, 167, 204, 0.05)",
+                                                },
+                                            }}
+                                        >
+                                            {subLabel}
+                                        </MenuItem>
+                                    ))}
+                                </MenuList>
+                            </Paper>
+                        </Grow>
+                    )}
+                </Popper>
             )}
-        </>
+        </Box>
     );
 };
 
@@ -244,7 +270,6 @@ export const NavbarMui: React.FC<NavbarProps> = ({
             label={label}
             link={linkData.href}
             sublinks={linkData.links}
-            onClose={() => {}}
         />
     ));
 

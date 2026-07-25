@@ -1,4 +1,3 @@
-import React from "react";
 import { NavbarMui } from "@/components/common/NavbarMui";
 
 interface NavbarProps {
